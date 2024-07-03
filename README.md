@@ -5,11 +5,11 @@ A repository for the software used in the paper "Building a small brain with a s
 ### CElegansData
 Contains the data (raw and processed) that is used for analyses.
 ### Figures
-Contains the figures in the paper, including files and saved calculations to create them.
+Contains the figures in the paper, including files and saved calculations to create them. Ignored by git due to size limits.
 ### ParamFiles
 Contains a parameters file that is used to train models (the values for the grid search in the plane of S- and beta)
 ### SavedOutputs
-Contains output files of distributed runs over the WIS computing cluster. They store calculations that were run in parallel.
+Contains output files of distributed runs over the WIS computing cluster. They store calculations that were run in parallel. Ignored by git due to size limits.
 ### c_elegans_constants.py
 Constants that are used throughout.
 ### c_elegans_data_parsing.py
