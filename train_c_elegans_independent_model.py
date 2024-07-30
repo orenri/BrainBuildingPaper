@@ -137,7 +137,7 @@ def calc_average_adj_mat_inferred_types_distributed(
         out_path=os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "InferredTypes")):
     num_types = int(os.environ['LSB_JOBINDEX'])
     cur_path = os.getcwd()
-    connectome_name = os.path.join(cur_path, "CElegansData", "InferredTypes", "FullDataset", "connectomes",
+    connectome_name = os.path.join(cur_path, "CElegansData", "InferredTypes", "connectomes",
                                    f"{num_types}_types", "Dataset7.pkl")
     spls_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "S+s", "InferredTypes", f"{num_types}_types")
     likelihood_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "likelihoods", "InferredTypes",
@@ -203,7 +203,7 @@ def train_on_control_outputs():
 
 def train_single_stage_sub_types_mei_zhen(data_set, params_file_name="spl_per_type_params_low_smi_low_beta.pkl"):
     cur_path = os.getcwd()
-    connectome_name = os.path.join("SubTypes", "FullDataset", "connectomes", f"Dataset{data_set}.pkl")
+    connectome_name = os.path.join("SubTypes", "connectomes", f"Dataset{data_set}.pkl")
 
     spls_single_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "S+s", "SubTypes")
     calc_spl_per_type_single_developmental_stage(
@@ -218,7 +218,7 @@ def train_single_stage_artificial_types_mei_zhen_7(params_file_name="spl_per_typ
     cur_path = os.getcwd()
     func_id = int(os.environ['LSB_JOBINDEX']) - 1
     num_artificial_types = func_id // 1600 + 1
-    connectome_name = os.path.join("InferredTypes", "FullDataset", "connectomes",
+    connectome_name = os.path.join("InferredTypes", "connectomes",
                                    f"{num_artificial_types}_types", "Dataset7.pkl")
 
     spls_single_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "S+s", "InferredTypes",
@@ -249,7 +249,7 @@ def train_single_stage_random_types_mei_zhen():
     cur_path = os.getcwd()
     func_id = int(os.environ['LSB_JOBINDEX']) - 1
     num_types = func_id // 1600 + 1
-    connectome_name = os.path.join("RandomTypes", "FullDataset", "connectomes", f"{num_types}_types",
+    connectome_name = os.path.join("RandomTypes", "connectomes", f"{num_types}_types",
                                    "Dataset7.pkl")
 
     spls_single_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "S+s", "RandomTypes",
@@ -285,7 +285,7 @@ def train_sub_models_sub_types_mei_zhen(data_set):
 
     train_single_stage_sub_types_mei_zhen(data_set)
 
-    connectome_name = os.path.join("SingleType", "FullDataset", "connectomes", f"Dataset{data_set}.pkl")
+    connectome_name = os.path.join("SingleType", "connectomes", f"Dataset{data_set}.pkl")
     type_configuration = CElegansNeuronsAdder.SINGLE_TYPE
     train_types_and_distances_model_distributed(type_configuration, connectome_name, distances_and_type_out_path,
                                                 neuron_subset_path)
@@ -299,7 +299,7 @@ def train_sub_models_sub_types_mei_zhen(data_set):
                              likelihood_single_path,
                              spls_single_path, connectome_name, batch_size=1)
 
-    connectome_name = os.path.join("CoarseTypes", "FullDataset", "connectomes", f"Dataset{data_set}.pkl")
+    connectome_name = os.path.join("CoarseTypes", "connectomes", f"Dataset{data_set}.pkl")
     spls_coarse_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "S+s", "CoarseTypes")
     calc_spl_per_type_single_developmental_stage(
         os.path.join(cur_path, "ParamFiles", "spl_per_type_params_low_smi_low_beta.pkl"),
@@ -319,9 +319,9 @@ def find_compact_representations():
     likelihood_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "likelihoods", "InferredTypes",
                                    f"{num_types}_types")
     smi, beta, _ = find_max_likelihood_full_model(likelihood_path)
-    train_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "FullDataset", "connectomes",
+    train_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "connectomes",
                                    f"{num_types}_types", "Dataset7.pkl")
-    test_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "FullDataset", "connectomes",
+    test_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "connectomes",
                                   f"{num_types}_types", "Dataset8.pkl")
     spls_dir_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "S+s", "InferredTypes",
                                  f"{num_types}_types")
@@ -365,7 +365,7 @@ def calc_average_connectome_noisy_birth_times():
     with open(spls_path, 'rb') as f:
         spls = pickle.load(f)
     for noise_level in noise_range:
-        noisy_birth_times_data_path = os.path.join(cur_path, "CElegansData", "SubTypes", "FullDataset",
+        noisy_birth_times_data_path = os.path.join(cur_path, "CElegansData", "SubTypes",
                                                    "noised_birth_times_connectomes", f'{int(100 * noise_level)}%_noise',
                                                    f'{func_id}', "Dataset7.pkl")
         out_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "average_adj_mats", "SubTypes",
@@ -439,9 +439,9 @@ def calc_performance_of_compressed_models():
     spls_file_name = f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl"
     spls_path = os.path.join(cur_path, "SavedOutputs", "IndependentModel", "S+s", "InferredTypes", f"{num_types}_types",
                              spls_file_name)
-    train_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "FullDataset", "connectomes",
+    train_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "connectomes",
                                    f"{num_types}_types", "Dataset7.pkl")
-    test_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "FullDataset", "connectomes",
+    test_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "connectomes",
                                   f"{num_types}_types", "Dataset8.pkl")
 
     compact_spls = find_compression_to_k_values(spls_path, compressed_num_spls)

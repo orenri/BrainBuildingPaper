@@ -34,25 +34,25 @@ compress 8-inferred-types-based models to all possible sizes and calculate their
 * in the main function of the file train_c_elegans_independent_model.py, call the funtion calc_performance_of_compressed_models().
 * in the cluster's terminal run the command bsub < ClusterScripts/train_c_elegans_independent_model.sh -J locals[2-52]
 
-train the single-epoch reciprocal model across gamma values (2-9), using the full dataset:
+train the single-epoch reciprocal model across gamma values (2-9) on the full dataset:
 * in the main function in the file train_c_elegans_reciprocal_model.py, call the function train_reciprocity_dependence_model_distributed_single_stage_full_dataset().
 * in the cluster's terminal run the command bash ClusterScripts/train_c_elegans_reciprocal_model_across_gamas.sh ClusterScripts/train_c_elegans_reciprocal_model.sh
 
 run trained single-epoch reciprocal models (simulate connectomic development):
-* in the main function in the file train_c_elegans_reciprocal_model.py, call the function run_reciprocity_dependence_model_distributed_across_gammas_full_dataset_single_dev_stage(), and pass as an argument the desired range of gamma (reciprocity) values.
+* in the main function in the file train_c_elegans_reciprocal_model.py, call the function run_reciprocity_dependence_model_distributed_across_gammas_single_dev_stage(), and pass as an argument the desired range of gamma (reciprocity) values.
 * in the cluster's terminal run the command bsub < ClusterScripts/train_c_elegans_reciprocal_model.sh -J locals[1-<num_simulations_to_run>]
 
-train the single epoch model using the consistent birth times data-sets :
-* in the main function in the file train_c_elegans_reciprocal_model.py, call the function train_single_epoch_consistent_birth_times().
+train the single epoch model using the split of dyads into train and test halves:
+* in the main function in the file train_c_elegans_reciprocal_model.py, call the function calc_dyads_dists_single_epoch_dyads_split().
 * in the cluster's terminal run the command bash ClusterScripts/train_single_multiple_epochs_across_splits.sh ClusterScripts/train_c_elegans_reciprocal_model.sh
 
-train the three epochs model using the consistent birth times data-sets :
-* in the main function in the file train_c_elegans_reciprocal_model.py, call the function train_three_epochs_consistent_birth_times().
+train the three epochs model using the split of dyads into train and test halves:
+* in the main function in the file train_c_elegans_reciprocal_model.py, call the function train_three_epochs_dyads_split().
 * in the cluster's terminal run the command bash ClusterScripts/train_single_multiple_epochs_across_splits.sh ClusterScripts/train_c_elegans_reciprocal_model.sh
 
 extract and save maximum likelihoods parameters for the single and three-epochs models
 * in the main function in the file train_c_elegans_reciprocal_model.py, call the functions save_max_like_params_per_split_single_epoch(), save_max_like_params_per_split_three_epochs() and run the script.
 
-calculate the distributions of all dyads states across data splits using the chosen S- value per split:
-* in the main function in the file train_c_elegans_reciprocal_model.py, call the functions calc_dyads_dists_single_epoch(), calc_dyads_dists_three_epochs().
+calculate the distributions of all dyads states across data splits:
+* in the main function in the file train_c_elegans_reciprocal_model.py, call the functions calc_dyads_dists_single_epoch_dyads_split(), calc_dyads_dists_three_epochs_dyads_split(). It is possible to pass a desired S- value to these functions.
 * in the cluster's terminal run the command bash ClusterScripts/calc_dyads_dists_across_splits.sh ClusterScripts/train_c_elegans_reciprocal_model.sh

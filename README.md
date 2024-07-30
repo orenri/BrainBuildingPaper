@@ -35,6 +35,11 @@ Implements the agglomerative clustering algorithm for inferring neuronal cell ty
 Calculate various graph measures.
 ### paper_figures.py
 Generate all the paper figures.
+Note that the path parameters in all functions (e.g. `out_path`, `saved_calcs_path`) must be specified to an existing path
+on the machine.
+Additionally, the figures may require outputs that are pre-calculated and stored in the SavedOutputs folder, which is not under version control due to
+its size. All necessary files can be calculated following the instructions in the file cluster_cmds.txt. However, they require parallel computations over a cluster of computers, and their generation may take time.
+Figure specific calculations (to which the flags `is_saved` and `do_save`, as well as the path `saved_calcs_path` refer) are not under version control, but can be computed locally given the necessary files in SavedOutputs, stored and reused.
 ### SynapsesAdder.py
 A class that implements the operator for synaptic formation throughout development.
 ### SynapsesRemover.py

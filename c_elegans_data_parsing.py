@@ -5,7 +5,7 @@ import pickle
 import os
 from copy import deepcopy
 from CElegansNeuronsAdder import CElegansNeuronsAdder
-from c_elegans_constants import WORM_LENGTH_NORMALIZATION, ADULT_WORM_AGE
+from c_elegans_constants import WORM_LENGTH_NORMALIZATION, ADULT_WORM_AGE, FULL_DEVELOPMENTAL_AGES
 
 # Connectivity types
 N1_TO_N2 = ['S', 'Sp']
@@ -213,29 +213,29 @@ def parse_connectivity_artificial_types_idx_based_types(data_path, artificial_ty
 def parse_connectivity_noisy_birth_times_mei_zhen(data_path, birth_times_noise, out_path, num_repeats=100):
     for i in range(1, num_repeats + 1):
         noisy_birth_times = {}
-        for data_set in os.listdir(data_path):
-            with open(os.path.join(data_path, data_set), 'rb') as f:
-                cur_data = pickle.load(f)
-            cur_data_noisy_birth_times = deepcopy(cur_data)
-            if not os.path.exists(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise')):
-                os.mkdir(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise'))
-            if not os.path.exists(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise', f'{i}')):
-                os.mkdir(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise', f'{i}'))
-            for node in cur_data.nodes:
-                if node not in noisy_birth_times.keys():
-                    true_birth_time = cur_data.nodes[node]['birth_time']
-                    max_noise_window_size = 2 * min(true_birth_time, ADULT_WORM_AGE - 10 - true_birth_time)
-                    noisy_birth_time = true_birth_time + (
-                            np.random.rand() - 0.5) * max_noise_window_size * birth_times_noise
-                    noisy_birth_times[node] = noisy_birth_time
-                cur_data_noisy_birth_times.nodes[node]['birth_time'] = noisy_birth_times[node]
-            with open(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise', f'{i}', data_set), 'wb') as f:
-                pickle.dump(cur_data_noisy_birth_times, f)
+        data_set = 'Dataset7.pkl'
+        with open(os.path.join(data_path, data_set), 'rb') as f:
+            cur_data = pickle.load(f)
+        cur_data_noisy_birth_times = deepcopy(cur_data)
+        if not os.path.exists(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise')):
+            os.mkdir(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise'))
+        if not os.path.exists(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise', f'{i}')):
+            os.mkdir(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise', f'{i}'))
+        for node in cur_data.nodes:
+            if node not in noisy_birth_times.keys():
+                true_birth_time = cur_data.nodes[node]['birth_time']
+                max_noise_window_size = 2 * min(true_birth_time, ADULT_WORM_AGE - 10 - true_birth_time)
+                noisy_birth_time = true_birth_time + (
+                        np.random.rand() - 0.5) * max_noise_window_size * birth_times_noise
+                noisy_birth_times[node] = noisy_birth_time
+            cur_data_noisy_birth_times.nodes[node]['birth_time'] = noisy_birth_times[node]
+        with open(os.path.join(out_path, f'{int(100 * birth_times_noise)}%_noise', f'{i}', data_set), 'wb') as f:
+            pickle.dump(cur_data_noisy_birth_times, f)
 
 
 def calc_average_birth_time_shift_noised_dataset(
-        noised_datasets_path=os.path.join("CElegansData", "SubTypes", "FullDataset", "noised_birth_times_connectomes"),
-        data_path=os.path.join("CElegansData", "SubTypes", "FullDataset", "connectomes", "Dataset7.pkl")):
+        noised_datasets_path=os.path.join("CElegansData", "SubTypes", "noised_birth_times_connectomes"),
+        data_path=os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset7.pkl")):
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     num_nodes = data.number_of_nodes()
@@ -307,116 +307,58 @@ def parse_connectivity_artificial_types_name_based_types(data_path, artificial_t
         pickle.dump(connectome, f)
 
 
-def parse_connectivity_mei_zhen(connectivity_path, positions_path, birth_times_path, type_path, type_configuration,
-                                out_dir_path, neurons_subset_path=None):
-    merged_df = pd.read_csv(connectivity_path, index_col=0)
-    if 'xls' in birth_times_path:
-        birth_times = pd.read_excel(birth_times_path, index_col=0)
-    elif 'csv' in birth_times_path:
-        birth_times = pd.read_csv(birth_times_path, index_col=0)
-    if neurons_subset_path is None:
-        neurons_list = list(birth_times.index)
-    else:
-        with open(neurons_subset_path, 'rb') as f:
-            neurons_list = sorted(pickle.load(f))
-    if DEFAULT_POSITIONS_FILE_NAME_3D in positions_path:
-        positions_data = pd.read_csv(positions_path, header=None)
-        positions_data.drop(
-            [idx for idx in range(len(positions_data.index)) if positions_data.iloc[idx, 0] not in neurons_list],
-            inplace=True)
-        coords_list = [np.array([positions_data.iloc[i, 1], positions_data.iloc[i, 2],
-                                 positions_data.iloc[i, 3]]) * 1 / WORM_LENGTH_NORMALIZATION for i
-                       in range(len(positions_data.index))]
-        positions = pd.DataFrame(index=neurons_list)
-        positions.insert(0, POSITION_COL, coords_list)
-    else:
-        positions = pd.read_excel(positions_path, index_col=0)
+def parse_connectivity_mei_zhen(num_synapses_data_path, positions_path, birth_times_path, type_path, type_configuration,
+                                out_dir_path):
+    birth_times = pd.read_excel(birth_times_path, index_col=0)
+    positions = pd.read_csv(positions_path, header=None, index_col=0)
     cell_types = pd.read_excel(type_path, index_col=0, sheet_name=None)
-    for dataset in ACROSS_DEVELOPMENT_DATA_SETS:
-        cur_connectome_df = merged_df.loc[dataset, :]
-        cur_connectome = nx.empty_graph(0, create_using=nx.DiGraph())
-        index = 0
-        for _, row in cur_connectome_df.iterrows():
-            # Ignore non-neuronal cells and neurons not in the subset (if given)
-            if cur_connectome_df[PRE_SYNAPTIC][index] not in neurons_list or cur_connectome_df[POST_SYNAPTIC][
-                index] not in neurons_list:
-                index += 1
-                continue
-            # ignore auto-synapses
-            if cur_connectome_df[PRE_SYNAPTIC][index] == cur_connectome_df[POST_SYNAPTIC][index]:
-                index += 1
-                continue
-            length = np.sqrt(
-                np.sum((positions.loc[cur_connectome_df[PRE_SYNAPTIC][index], POSITION_COL] - positions.loc[
-                    cur_connectome_df[POST_SYNAPTIC][index], POSITION_COL]) ** 2))
-            birth_time = max(birth_times.loc[cur_connectome_df[PRE_SYNAPTIC][index], BIRTH_TIME_COL],
-                             birth_times.loc[cur_connectome_df[POST_SYNAPTIC][index], BIRTH_TIME_COL])
-            edge = (cur_connectome_df[PRE_SYNAPTIC][index], cur_connectome_df[POST_SYNAPTIC][index],
-                    {'length': length, 'birth time': birth_time})
-
-            # Validate that the nodes already exist in the graph
-            if cur_connectome_df[PRE_SYNAPTIC][index] not in cur_connectome.nodes():
-                if CElegansNeuronsAdder.SINGLE_TYPE == type_configuration:
-                    neuron_type = None
-                else:
-                    for sheet in cell_types.keys():
-                        if cur_connectome_df[PRE_SYNAPTIC][index] in cell_types[sheet].index:
-                            neuron_type_xls = cell_types[sheet].loc[
-                                cur_connectome_df[PRE_SYNAPTIC][index], CELL_TYPE_COL]
-                            if neuron_type_xls in SENSORY_XLS:
-                                neuron_type = SENSORY
-                            elif neuron_type_xls in MOTOR_XLS:
-                                neuron_type = MOTOR
-                            elif neuron_type_xls in INTER_XLS:
-                                neuron_type = INTER
-                            if CElegansNeuronsAdder.COARSE_TYPES == type_configuration:
-                                break
-                            elif CElegansNeuronsAdder.SUB_TYPES == type_configuration:
-                                neurons_subtype_xls = cell_types[sheet].loc[
-                                    cur_connectome_df[PRE_SYNAPTIC][index], CELL_SUBTYPE_COL]
-                                if neurons_subtype_xls in CELL_TYPE_MAPPING.keys():
-                                    neuron_type = CELL_TYPE_MAPPING[neurons_subtype_xls]
+    for i in range(1, 9):
+        cur_df = pd.read_excel(num_synapses_data_path, sheet_name=f'Dataset{i}', index_col=2, skiprows=2)
+        cur_df = cur_df[1:]
+        cur_df = cur_df.iloc[:, 2:]
+        neurons_of_age = [n for n in cur_df.index if
+                          n in birth_times.index and birth_times.loc[n][BIRTH_TIME_COL] <= FULL_DEVELOPMENTAL_AGES[
+                              min(i - 1, 6)]]
+        rows_to_drop = [n for n in cur_df.index if n not in neurons_of_age]
+        cols_to_drop = [n for n in cur_df if n not in neurons_of_age]
+        cur_df.drop(rows_to_drop, axis=0, inplace=True)
+        cur_df.drop(cols_to_drop, axis=1, inplace=True)
+        cur_connectome = nx.empty_graph(0, create_using=nx.DiGraph)
+        for n in neurons_of_age:
+            if CElegansNeuronsAdder.SINGLE_TYPE == type_configuration:
+                neuron_type = None
+            else:
+                for sheet in cell_types.keys():
+                    if n in cell_types[sheet].index:
+                        neuron_type_xls = cell_types[sheet].loc[n, CELL_TYPE_COL]
+                        if neuron_type_xls in SENSORY_XLS:
+                            neuron_type = SENSORY
+                        elif neuron_type_xls in MOTOR_XLS:
+                            neuron_type = MOTOR
+                        elif neuron_type_xls in INTER_XLS:
+                            neuron_type = INTER
+                        if CElegansNeuronsAdder.COARSE_TYPES == type_configuration:
                             break
-
-                cur_connectome.add_node(cur_connectome_df[PRE_SYNAPTIC][index],
-                                        coords=positions.loc[cur_connectome_df[PRE_SYNAPTIC][index], POSITION_COL],
-                                        birth_time=birth_times.loc[
-                                            cur_connectome_df[PRE_SYNAPTIC][index], BIRTH_TIME_COL],
-                                        type=neuron_type)
-
-            if cur_connectome_df[POST_SYNAPTIC][index] not in cur_connectome.nodes():
-                if CElegansNeuronsAdder.SINGLE_TYPE == type_configuration:
-                    neuron_type = None
-                else:
-                    for sheet in cell_types.keys():
-                        if cur_connectome_df[POST_SYNAPTIC][index] in cell_types[sheet].index:
-                            neuron_type_xls = cell_types[sheet].loc[
-                                cur_connectome_df[POST_SYNAPTIC][index], CELL_TYPE_COL]
-                            if neuron_type_xls in SENSORY_XLS:
-                                neuron_type = SENSORY
-                            elif neuron_type_xls in MOTOR_XLS:
-                                neuron_type = MOTOR
-                            elif neuron_type_xls in INTER_XLS:
-                                neuron_type = INTER
-                            if CElegansNeuronsAdder.COARSE_TYPES == type_configuration:
-                                break
-                            elif CElegansNeuronsAdder.SUB_TYPES == type_configuration:
-                                neurons_subtype_xls = cell_types[sheet].loc[
-                                    cur_connectome_df[POST_SYNAPTIC][index], CELL_SUBTYPE_COL]
-                                if neurons_subtype_xls in CELL_TYPE_MAPPING.keys():
-                                    neuron_type = CELL_TYPE_MAPPING[neurons_subtype_xls]
-                            break
-
-                cur_connectome.add_node(cur_connectome_df[POST_SYNAPTIC][index],
-                                        coords=positions.loc[cur_connectome_df[POST_SYNAPTIC][index], POSITION_COL],
-                                        birth_time=birth_times.loc[
-                                            cur_connectome_df[POST_SYNAPTIC][index], BIRTH_TIME_COL],
-                                        type=neuron_type)
-
-            # Add the edges (if they already exist their data is updated, meaning nothing happens
-            cur_connectome.add_edges_from([edge])
-            index += 1
-        out_path = os.path.join(out_dir_path, dataset + ".pkl")
+                        elif CElegansNeuronsAdder.SUB_TYPES == type_configuration:
+                            neurons_subtype_xls = cell_types[sheet].loc[n, CELL_SUBTYPE_COL]
+                            if neurons_subtype_xls in CELL_TYPE_MAPPING.keys():
+                                neuron_type = CELL_TYPE_MAPPING[neurons_subtype_xls]
+                        break
+            cur_connectome.add_node(n,
+                                    coords=np.array([positions.loc[n][1], positions.loc[n][2],
+                                                     positions.loc[n][3]]) * 1 / WORM_LENGTH_NORMALIZATION,
+                                    birth_time=birth_times.loc[n, BIRTH_TIME_COL],
+                                    type=neuron_type)
+        for pre in cur_df.index:
+            for post in cur_df.index:
+                if pre == post:
+                    continue
+                if cur_df.loc[post, pre] > 0:
+                    length = np.linalg.norm(cur_connectome.nodes[post]['coords'] - cur_connectome.nodes[pre]['coords'])
+                    birth_time = max(cur_connectome.nodes[post]['birth_time'], cur_connectome.nodes[pre]['birth_time'])
+                    edge = (pre, post, {'length': length, 'birth time': birth_time})
+                    cur_connectome.add_edges_from([edge])
+        out_path = os.path.join(out_dir_path, f'Dataset{i}' + ".pkl")
         with open(out_path, 'wb') as f:
             pickle.dump(cur_connectome, f)
 
@@ -566,52 +508,6 @@ def sort_neurons_by_artificial_types(neuronal_types_path, neurons_list_for_type_
     for j in range(len(alphabetic_neuronal_names)):
         neurons_idx_by_type[j] = alphabetic_neuronal_names.index(neuronal_names_ordered_by_type[j])
     return neurons_idx_by_type
-
-
-def find_mei_zhen_worms_missing_neurons(birth_times_file_name):
-    mei_zhen_worms_path = "CElegansData\ConnectomesAcrossDevelopment\\FullDataset\SubTypes"
-    birth_times_path = os.path.join('CElegansData', birth_times_file_name)
-    neurons_subset_path = 'CElegansData\ConnectomesAcrossDevelopment\FullDataset\\neurons_subset.pkl'
-    worms_indices = np.arange(1, 8)
-    if 'xls' in birth_times_file_name:
-        birth_times = pd.read_excel(birth_times_path, index_col=0)
-    elif 'csv' in birth_times_file_name:
-        birth_times = pd.read_csv(birth_times_path, index_col=0)
-    with open(neurons_subset_path, 'rb') as f:
-        neurons_subset = pickle.load(f)
-    birth_times.drop([neuron for neuron in birth_times.index if neuron not in neurons_subset], inplace=True)
-    birth_times.sort_values(by=[CElegansNeuronsAdder.BIRTH_TIME_COL], inplace=True)
-    discrepency_neurons = []
-    for idx in worms_indices:
-        with open(os.path.join(mei_zhen_worms_path, f"Dataset{idx}.pkl"), 'rb') as f:
-            cur_worm = pickle.load(f)
-        cur_neurons = list(cur_worm.nodes)
-        cur_birth_times = [0] * len(cur_neurons)
-        for i in range(len(cur_neurons)):
-            birth_time = birth_times.loc[cur_neurons[i], CElegansNeuronsAdder.BIRTH_TIME_COL]
-            cur_birth_times[i] = birth_time
-        max_birth_time = max(cur_birth_times)
-        missing_neurons_in_cur_worm = []
-        for neuron in neurons_subset:
-            if birth_times.loc[
-                neuron, CElegansNeuronsAdder.BIRTH_TIME_COL] <= max_birth_time and neuron not in cur_neurons:
-                missing_neurons_in_cur_worm.append(neuron)
-                if neuron not in discrepency_neurons:
-                    discrepency_neurons.append(neuron)
-        print(f'worm {idx} max birth time: {max_birth_time}, missing neurons:')
-        print(missing_neurons_in_cur_worm)
-        print('\n')
-
-    # Add 2 neurons that are born too early after worm 1 and appear only in worm 4
-    discrepency_neurons.append('ALNR')
-    discrepency_neurons.append('ALNL')
-    # birth_times.drop([neuron for neuron in birth_times.index if neuron in discrepency_neurons], inplace=True)
-    # birth_times.to_csv("D:\OrenRichter\\temp\\sorted_birth_times.csv")
-    neurons_consistent_subset = [n for n in neurons_subset if n not in discrepency_neurons]
-    print(len(neurons_consistent_subset))
-    with open('CElegansData\ConnectomesAcrossDevelopment\ConsistentBirthTimes\\neurons_consistent_subset.pkl',
-              'wb') as f:
-        pickle.dump(neurons_consistent_subset, f)
 
 
 def convert_indices_to_names_in_artificial_types(art_type_path, neurons_list_path):

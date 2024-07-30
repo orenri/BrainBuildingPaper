@@ -12,8 +12,8 @@ from tqdm import tqdm
 
 from c_elegans_independent_model_training import sample_from_average_adj_mat, calc_model_adj_mat, \
     convert_spls_dict_to_mat, calc_elongation_factor, average_matrix_log_likelihood
-from c_elegans_constants import ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE, FULL_DEVELOPMENT_AGES_CONSISTENT, \
-    WORM_LENGTH_NORMALIZATION, THREE_DEVELOPMENTAL_AGES_CONSISTENT
+from c_elegans_constants import ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE, FULL_DEVELOPMENTAL_AGES, \
+    WORM_LENGTH_NORMALIZATION, THREE_DEVELOPMENTAL_AGES
 from er_block_model import generate_er_block_per_type
 from CElegansNeuronsAdder import CElegansNeuronsAdder
 from wrap_cluster_runs import find_max_likelihood_distance_model, find_max_likelihood_full_model
@@ -70,7 +70,7 @@ COOK_TYPES_COLOR = adjust_lightness('gray', 1.25)
 
 
 def fig_1_b(out_path="Figures\\Fig1"):
-    data_path = "CElegansData\SubTypes\FullDataset\connectomes\\Dataset7.pkl"
+    data_path = "CElegansData\SubTypes\connectomes\\Dataset7.pkl"
     likelihoods_path = 'SavedOutputs\IndependentModel\likelihoods\SubTypes'
     smi, beta, _ = find_max_likelihood_full_model(likelihoods_path)
     spls_path = os.path.join("SavedOutputs\\IndependentModel\S+s\SubTypes", f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl")
@@ -154,7 +154,7 @@ def fig_1_c(out_path="Figures\\Fig1"):
 def fig_1_d_e_f(out_path="Figures\\Fig1"):
     np.random.seed(123456789)
 
-    data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     alphabetic_neuronal_names = sorted(data_connectome.nodes)
@@ -252,7 +252,7 @@ def fig_1_d_e_f(out_path="Figures\\Fig1"):
 
 
 def fig_1_g(out_path="Figures\\Fig1"):
-    data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    data_connectome_path = 'CElegansData\SubTypes\connectomes\Dataset8.pkl'
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
@@ -298,7 +298,7 @@ def fig_1_g(out_path="Figures\\Fig1"):
 
 def fig_2_b(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\average_mats", is_saved=False,
             do_save=True):
-    data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    data_connectome_path = 'CElegansData\SubTypes\connectomes\Dataset8.pkl'
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
@@ -306,7 +306,7 @@ def fig_2_b(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
 
     if not is_saved:
         _, types_single_average_mat = generate_er_block_per_type(CElegansNeuronsAdder.SINGLE_TYPE,
-                                                                 'SingleType\FullDataset\connectomes\Dataset7.pkl',
+                                                                 'SingleType\connectomes\Dataset7.pkl',
                                                                  'CElegansData\\nerve_ring_neurons_subset.pkl')
 
         birth_times_beta = 0
@@ -320,7 +320,7 @@ def fig_2_b(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
                                                                  smi_single_types_birth_times,
                                                                  birth_times_beta, ADULT_WORM_AGE,
                                                                  SINGLE_DEVELOPMENTAL_AGE,
-                                                                 'CElegansData\SingleType\FullDataset\connectomes\Dataset7.pkl')
+                                                                 'CElegansData\SingleType\connectomes\Dataset7.pkl')
 
         smi_single_type_full, beta_single_type_full, _ = find_max_likelihood_full_model(
             "SavedOutputs\IndependentModel\likelihoods\SingleType")
@@ -330,7 +330,7 @@ def fig_2_b(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
         full_single_type_average_mat = calc_model_adj_mat(full_single_type_spls, smi_single_type_full,
                                                           beta_single_type_full, ADULT_WORM_AGE,
                                                           SINGLE_DEVELOPMENTAL_AGE,
-                                                          'CElegansData\SingleType\FullDataset\connectomes\Dataset7.pkl')
+                                                          'CElegansData\SingleType\\connectomes\Dataset7.pkl')
 
         if do_save:
             with open(os.path.join(saved_calcs_path, 'types_1_types_average.pkl'), 'wb') as f:
@@ -399,7 +399,7 @@ def fig_2_b(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
 
 def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\average_mats", is_saved=False,
             do_save=True):
-    data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
@@ -414,7 +414,7 @@ def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
         full_single_type_average_mat = calc_model_adj_mat(full_single_type_spls, smi_single_type_full,
                                                           beta_single_type_full, ADULT_WORM_AGE,
                                                           SINGLE_DEVELOPMENTAL_AGE,
-                                                          'CElegansData\SingleType\FullDataset\connectomes\Dataset7.pkl')
+                                                          'CElegansData\SingleType\\connectomes\Dataset7.pkl')
 
         smi_coarse_types_full, beta_coarse_types_full, _ = find_max_likelihood_full_model(
             "SavedOutputs\IndependentModel\likelihoods\CoarseTypes")
@@ -424,7 +424,7 @@ def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
         full_coarse_types_average_mat = calc_model_adj_mat(full_coarse_types_spls, smi_coarse_types_full,
                                                            beta_coarse_types_full, ADULT_WORM_AGE,
                                                            SINGLE_DEVELOPMENTAL_AGE,
-                                                           'CElegansData\CoarseTypes\FullDataset\connectomes\Dataset7.pkl')
+                                                           'CElegansData\CoarseTypes\\connectomes\Dataset7.pkl')
 
         smi_sub_types_full, beta_sub_types_full, _ = find_max_likelihood_full_model(
             "SavedOutputs\IndependentModel\likelihoods\SubTypes")
@@ -434,7 +434,7 @@ def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
         full_sub_types_average_mat = calc_model_adj_mat(full_sub_types_spls, smi_sub_types_full,
                                                         beta_sub_types_full, ADULT_WORM_AGE,
                                                         SINGLE_DEVELOPMENTAL_AGE,
-                                                        'CElegansData\SubTypes\FullDataset\connectomes\Dataset7.pkl')
+                                                        'CElegansData\SubTypes\\connectomes\Dataset7.pkl')
         if do_save:
             with open(os.path.join(saved_calcs_path, 'full_1_types_average.pkl'), 'wb') as f:
                 pickle.dump(full_single_type_average_mat, f)
@@ -493,7 +493,7 @@ def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
 
 def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\average_mats", is_saved=False,
             do_save=True):
-    data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
@@ -510,7 +510,7 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
         full_single_type_average_mat = calc_model_adj_mat(full_single_type_spls, smi_single_type_full,
                                                           beta_single_type_full, ADULT_WORM_AGE,
                                                           SINGLE_DEVELOPMENTAL_AGE,
-                                                          'CElegansData\SingleType\FullDataset\connectomes\Dataset7.pkl')
+                                                          'CElegansData\SingleType\\connectomes\Dataset7.pkl')
 
         smi_coarse_types_full, beta_coarse_types_full, _ = find_max_likelihood_full_model(
             "SavedOutputs\IndependentModel\likelihoods\CoarseTypes")
@@ -520,7 +520,7 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
         full_coarse_types_average_mat = calc_model_adj_mat(full_coarse_types_spls, smi_coarse_types_full,
                                                            beta_coarse_types_full, ADULT_WORM_AGE,
                                                            SINGLE_DEVELOPMENTAL_AGE,
-                                                           'CElegansData\CoarseTypes\FullDataset\connectomes\Dataset7.pkl')
+                                                           'CElegansData\CoarseTypes\\connectomes\Dataset7.pkl')
 
         smi_sub_types_full, beta_sub_types_full, _ = find_max_likelihood_full_model(
             "SavedOutputs\IndependentModel\likelihoods\SubTypes")
@@ -530,7 +530,7 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
         full_sub_types_average_mat = calc_model_adj_mat(full_sub_types_spls, smi_sub_types_full,
                                                         beta_sub_types_full, ADULT_WORM_AGE,
                                                         SINGLE_DEVELOPMENTAL_AGE,
-                                                        'CElegansData\SubTypes\FullDataset\connectomes\Dataset7.pkl')
+                                                        'CElegansData\SubTypes\\connectomes\Dataset7.pkl')
 
         average_mats_inferred_types = []
         for num_types in num_types_range:
@@ -542,7 +542,7 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
             full_average_mat = calc_model_adj_mat(full_spls, smi_full,
                                                   beta_full, ADULT_WORM_AGE,
                                                   SINGLE_DEVELOPMENTAL_AGE,
-                                                  f'CElegansData\InferredTypes\FullDataset\connectomes\\{num_types}_types\Dataset7.pkl')
+                                                  f'CElegansData\InferredTypes\\connectomes\\{num_types}_types\Dataset7.pkl')
             average_mats_inferred_types.append(full_average_mat)
 
         average_mats_random_types = []
@@ -555,7 +555,7 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
             full_average_mat = calc_model_adj_mat(full_spls, smi_full,
                                                   beta_full, ADULT_WORM_AGE,
                                                   SINGLE_DEVELOPMENTAL_AGE,
-                                                  f'CElegansData\RandomTypes\FullDataset\connectomes\\{num_types}_types\Dataset7.pkl')
+                                                  f'CElegansData\RandomTypes\\connectomes\\{num_types}_types\Dataset7.pkl')
             average_mats_random_types.append(full_average_mat)
 
         if do_save:
@@ -638,7 +638,7 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
 def fig_2_e_f_g(out_path="Figures\\Fig2"):
     np.random.seed(123456789)
     num_types = 8
-    train_data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset7.pkl'
+    train_data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
     with open(train_data_connectome_path, 'rb') as f:
         train_data_connectome = pickle.load(f)
     alphabetic_neuronal_names = sorted(train_data_connectome.nodes)
@@ -659,7 +659,7 @@ def fig_2_e_f_g(out_path="Figures\\Fig2"):
 
     train_data_adj_mat = train_data_adj_mat[neurons_idx_by_type, neurons_idx_by_type.T]
 
-    data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     alphabetic_neuronal_names = sorted(data_connectome.nodes)
@@ -733,7 +733,7 @@ def fig_2_e_f_g(out_path="Figures\\Fig2"):
 
 
 def fig_graph_features_a(out_path="Figures\\FigGraphFeatures"):
-    data_path = "CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl"
+    data_path = "CElegansData\SubTypes\\connectomes\Dataset8.pkl"
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_mat = nx.to_numpy_array(data, nodelist=sorted(data.nodes))
@@ -824,7 +824,7 @@ def fig_graph_features_b(out_path="Figures\\FigGraphFeatures"):
     model_mean_out_degrees = model_average_mat.sum(axis=1)
     model_std_out_degrees = np.sqrt(np.sum(model_average_mat * (1 - model_average_mat), axis=1))
 
-    data_path = "CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl"
+    data_path = "CElegansData\SubTypes\\connectomes\Dataset8.pkl"
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_mat = nx.to_numpy_array(data, nodelist=sorted(data.nodes))
@@ -891,7 +891,7 @@ def fig_graph_features_b(out_path="Figures\\FigGraphFeatures"):
 
 def fig_graph_features_c_d(out_path="Figures\\FigGraphFeatures"):
     birth_times_res = 10  # min.
-    data_path = "CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl"
+    data_path = "CElegansData\SubTypes\\connectomes\Dataset8.pkl"
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     sorted_neurons = sorted(data.nodes)
@@ -1007,7 +1007,7 @@ def fig_graph_features_c_d(out_path="Figures\\FigGraphFeatures"):
 def fig_graph_features_e(out_path="Figures\\FigGraphFeatures",
                          saved_calcs_path="Figures\SavedCalcs\\triads_distributions\independent_model",
                          is_saved=False, do_save=True):
-    data_path = "CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl"
+    data_path = "CElegansData\SubTypes\\connectomes\Dataset8.pkl"
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_triads_distribution = calc_norm_triad_motifs_dist(data)
@@ -1064,7 +1064,7 @@ def fig_graph_features_e(out_path="Figures\\FigGraphFeatures",
 def fig_graph_features_f(out_path="Figures\\FigGraphFeatures",
                          saved_calcs_path="Figures\SavedCalcs\\triads_distributions\\reciprocal_model",
                          is_saved=False, do_save=True):
-    data_path = "CElegansData\SubTypes\FullDataset\connectomes\\Dataset8.pkl"
+    data_path = "CElegansData\SubTypes\\connectomes\\Dataset8.pkl"
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_triads = calc_norm_triad_motifs_dist(data)
@@ -1189,7 +1189,7 @@ def fig_inferred_types_bio_interpretation_a(out_path="Figures\\FigInfTypesBioInt
 def fig_inferred_types_bio_interpretation_b(out_path="Figures\\FigInfTypesBioInter"):
     num_inferred_types = 8
     num_cook_types = 13
-    data_path = f"CElegansData\InferredTypes\FullDataset\connectomes\\{num_inferred_types}_types\\Dataset7.pkl"
+    data_path = f"CElegansData\InferredTypes\\connectomes\\{num_inferred_types}_types\\Dataset7.pkl"
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     with open("CElegansData\\neuronal_types_dict.pkl", 'rb') as f:
@@ -1354,7 +1354,7 @@ def fig_inferred_types_bio_interpretation_c_d(out_path="Figures\\FigInfTypesBioI
     with open(types_path, 'rb') as f:
         inferred_neuronal_types = pickle.load(f)[1]
 
-    data_path = f"CElegansData\InferredTypes\FullDataset\connectomes\\{num_types}_types\\Dataset8.pkl"
+    data_path = f"CElegansData\InferredTypes\\connectomes\\{num_types}_types\\Dataset8.pkl"
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_mat = nx.to_numpy_array(data, nodelist=sorted(data.nodes))
@@ -1505,16 +1505,16 @@ def fig_inferred_types_bio_interpretation_c_d(out_path="Figures\\FigInfTypesBioI
 def _fig_6_a(worms_indices, split):
     np.random.seed(123456789)
     num_types = 8
-    data_dir_path = f"CElegansData\InferredTypes\ConsistentBirthTimes\connectomes\\{num_types}_types"
-    dyads_dist_single_epoch_dir_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\SingleDevStage"
-    dyads_dist_multiple_epochs_dir_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\ThreeDevStages"
+    data_dir_path = f"CElegansData\InferredTypes\\connectomes\\{num_types}_types"
+    dyads_dist_single_epoch_dir_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\SingleDevStage"
+    dyads_dist_multiple_epochs_dir_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages"
     neuronal_types_path = f"CElegansData\InferredTypes\\types\\{num_types}.pkl"
     neurons_list_path = "CElegansData\\nerve_ring_neurons_subset.pkl"
 
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_single_epoch.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_single_epoch.pkl",
               'rb') as f:
         smi_single = pickle.load(f)[f'split{split}']['S-']
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         smi_mulitple = pickle.load(f)[f'split{split}']['S-']
 
@@ -1543,7 +1543,7 @@ def _fig_6_a(worms_indices, split):
 
     for i in worms_indices:
         cur_data_path = os.path.join(data_dir_path, f'Dataset{i}.pkl')
-        cur_age = FULL_DEVELOPMENT_AGES_CONSISTENT[min(i - 1, 6)]
+        cur_age = FULL_DEVELOPMENTAL_AGES[min(i - 1, 6)]
         cur_multiple_dyads_train_path = os.path.join(dyads_dist_multiple_epochs_dir_path, "TrainSet",
                                                      f'split{split}', f'{smi_mulitple:.5f}',
                                                      f'{cur_age}.pkl')
@@ -1629,30 +1629,30 @@ def _fig_6_a(worms_indices, split):
                         hspace=padding / fig_ratio)
 
 
-def fig_6_a(out_path="Figures\\Fig6", split=12):
+def fig_6_a(out_path="Figures\\Fig6", split=16):
     _fig_6_a([1, 3, 5, 8], split=split)
-    plt.savefig(os.path.join(out_path, '6_a_darker.pdf'), format='pdf')
+    plt.savefig(os.path.join(out_path, '6_a.pdf'), format='pdf')
     plt.show()
 
     _fig_6_a(list(range(1, 7)) + [8], split=split)
-    plt.savefig(os.path.join(out_path, '6_a_all_worms_darker.pdf'), format='pdf')
+    plt.savefig(os.path.join(out_path, '6_a_all_worms.pdf'), format='pdf')
     plt.show()
 
 
 def fig_6_b(out_path="Figures\\Fig6\\b"):
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_single_epoch.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_single_epoch.pkl",
               'rb') as f:
         max_like_params_single = pickle.load(f)
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
     for split in range(1, num_splits + 1):
         smi_single = max_like_params_single[f'split{split}']['S-']
         smi_multiple = max_like_params_multiple[f'split{split}']['S-']
-        single_model_dyads_test_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\SingleDevStage\TestSet\\split{split}\\{smi_single:.5f}\\3500.pkl"
-        multiple_model_dyads_test_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\ThreeDevStages\TestSet\\split{split}\\{smi_multiple:.5f}\\3500.pkl"
-        test_data_path = f"CElegansData\InferredTypes\ConsistentBirthTimes\synapses_lists\8_types\\split{split}\\test\Dataset8.pkl"
+        single_model_dyads_test_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\SingleDevStage\TestSet\\split{split}\\{smi_single:.5f}\\3500.pkl"
+        multiple_model_dyads_test_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\TestSet\\split{split}\\{smi_multiple:.5f}\\3500.pkl"
+        test_data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\test\Dataset8.pkl"
         with open(test_data_path, 'rb') as f:
             test_data = sorted(pickle.load(f))
         test_data_exists = []
@@ -1707,24 +1707,24 @@ def fig_6_b(out_path="Figures\\Fig6\\b"):
 def fig_6_d(out_path="Figures\\Fig6\\d"):
     num_stds = 1
     train_or_test = 'Test'
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_single_epoch.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_single_epoch.pkl",
               'rb') as f:
         max_like_params_single = pickle.load(f)
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
     single_pruning_density = np.zeros((num_splits, ADULT_WORM_AGE // 10))
     multiple_pruning_density = np.zeros((num_splits, ADULT_WORM_AGE // 10))
     data_ages = np.array(
-        [FULL_DEVELOPMENT_AGES_CONSISTENT[stage] for stage in sorted(FULL_DEVELOPMENT_AGES_CONSISTENT.keys())])
+        [FULL_DEVELOPMENTAL_AGES[stage] for stage in sorted(FULL_DEVELOPMENTAL_AGES.keys())])
     data_density = np.zeros((num_splits, data_ages.size))
     for split in range(1, num_splits + 1):
         smi_single = max_like_params_single[f'split{split}']["S-"]
         smi_multiple = max_like_params_multiple[f'split{split}']["S-"]
-        single_pruning_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\SingleDevStage\\{train_or_test}Set\\split{split}\\{smi_single:.5f}"
-        multiple_pruning_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{smi_multiple:.5f}"
-        data_path = f"CElegansData\InferredTypes\ConsistentBirthTimes\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
+        single_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\dyads_distributions\SingleDevStage\\{train_or_test}Set\\split{split}\\{smi_single:.5f}"
+        multiple_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{smi_multiple:.5f}"
+        data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
 
         single_pruning_density_std = np.zeros(ADULT_WORM_AGE // 10)
         multiple_pruning_density_std = np.zeros(ADULT_WORM_AGE // 10)
@@ -1857,11 +1857,11 @@ def fig_6_e(out_path="Figures\\Fig6\\e", saved_calcs_path="Figures\SavedCalcs", 
     num_splits = 20
     train_or_test = "Test"
     data_ages = np.array(
-        [FULL_DEVELOPMENT_AGES_CONSISTENT[stage] for stage in sorted(FULL_DEVELOPMENT_AGES_CONSISTENT.keys())])
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_single_epoch.pkl",
+        [FULL_DEVELOPMENTAL_AGES[stage] for stage in sorted(FULL_DEVELOPMENTAL_AGES.keys())])
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_single_epoch.pkl",
               'rb') as f:
         max_like_params_single = pickle.load(f)
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     if not is_saved:
@@ -1870,9 +1870,9 @@ def fig_6_e(out_path="Figures\\Fig6\\e", saved_calcs_path="Figures\SavedCalcs", 
         for split in range(1, num_splits + 1):
             single_smi = max_like_params_single[f'split{split}']['S-']
             multiple_smi = max_like_params_multiple[f'split{split}']['S-']
-            single_pruning_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\SingleDevStage\{train_or_test}Set\\split{split}\\{single_smi:.5f}"
-            multiple_pruning_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\\ThreeDevStages\{train_or_test}Set\\split{split}\\{multiple_smi:.5f}"
-            data_path = f"CElegansData\InferredTypes\ConsistentBirthTimes\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
+            single_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\SingleDevStage\{train_or_test}Set\\split{split}\\{single_smi:.5f}"
+            multiple_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\\ThreeDevStages\{train_or_test}Set\\split{split}\\{multiple_smi:.5f}"
+            data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
 
             cur_idx = 0
             for age in data_ages:
@@ -1911,14 +1911,14 @@ def fig_6_e(out_path="Figures\\Fig6\\e", saved_calcs_path="Figures\SavedCalcs", 
         ax1.set_xticklabels([str(i) for i in xticks], fontsize=fontsize)
         ax1.set_yticks(yticks)
         ax1.set_yticklabels([str(i) for i in yticks], fontsize=fontsize)
-        ax1.set_xlim(FULL_DEVELOPMENT_AGES_CONSISTENT[0] - 200, ADULT_WORM_AGE + 200)
-        ax1.set_ylim(-21, 41)
+        ax1.set_xlim(FULL_DEVELOPMENTAL_AGES[0] - 200, ADULT_WORM_AGE + 200)
+        ax1.set_ylim(-23.5, 46)
         ax1.set_xlabel('worm age [min.]', fontsize=fontsize, labelpad=axes_labelpad)
         ax1.set_ylabel(r'$\log _{10} ( \mathcal{L} _{\mathrm{multi}} / \mathcal{L} _{\mathrm{single}} )$',
                        fontsize=fontsize,
                        labelpad=axes_labelpad - 5)
 
-        ax1.plot([FULL_DEVELOPMENT_AGES_CONSISTENT[0] - 100, ADULT_WORM_AGE + 100], [0, 0],
+        ax1.plot([FULL_DEVELOPMENTAL_AGES[0] - 100, ADULT_WORM_AGE + 100], [0, 0],
                  c=adjust_lightness('grey', 1.5), markersize=markersize)
         ax1.plot(data_ages, np.log10(np.exp(1)) * (
                 multiple_pruning_likelihoods[split - 1] - single_pruning_likelihoods[split - 1]), '.', c='k',
@@ -1941,14 +1941,14 @@ def fig_6_e(out_path="Figures\\Fig6\\e", saved_calcs_path="Figures\SavedCalcs", 
     ax1.set_xticklabels([str(i) for i in xticks], fontsize=fontsize)
     ax1.set_yticks(yticks)
     ax1.set_yticklabels([str(i) for i in yticks], fontsize=fontsize)
-    ax1.set_xlim(FULL_DEVELOPMENT_AGES_CONSISTENT[0] - 200, ADULT_WORM_AGE + 200)
-    ax1.set_ylim(-21, 41)
+    ax1.set_xlim(FULL_DEVELOPMENTAL_AGES[0] - 200, ADULT_WORM_AGE + 200)
+    ax1.set_ylim(-23.5, 46)
     ax1.set_xlabel('worm age [min.]', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel(r'$\log _{10} ( \mathcal{L} _{\mathrm{multi}} / \mathcal{L} _{\mathrm{single}} )$',
                    fontsize=fontsize,
                    labelpad=axes_labelpad - 5)
 
-    ax1.plot([FULL_DEVELOPMENT_AGES_CONSISTENT[0] - 100, ADULT_WORM_AGE + 100], [0, 0],
+    ax1.plot([FULL_DEVELOPMENTAL_AGES[0] - 100, ADULT_WORM_AGE + 100], [0, 0],
              c=adjust_lightness('grey', 1.5), markersize=markersize)
     ax1.errorbar(data_ages,
                  np.log10(np.exp(1)) * (multiple_pruning_likelihoods - single_pruning_likelihoods).mean(axis=0),
@@ -1964,10 +1964,10 @@ def fig_6_e(out_path="Figures\\Fig6\\e", saved_calcs_path="Figures\SavedCalcs", 
 def fig_6_f(out_path="Figures\\Fig6\\f", saved_calcs_path="Figures\SavedCalcs", is_saved=False, do_save=True):
     num_splits = 20
     data_ages = np.array(
-        [FULL_DEVELOPMENT_AGES_CONSISTENT[stage] for stage in sorted(FULL_DEVELOPMENT_AGES_CONSISTENT.keys())])
+        [FULL_DEVELOPMENTAL_AGES[stage] for stage in sorted(FULL_DEVELOPMENTAL_AGES.keys())])
     train_or_test = "Test"
     if not is_saved:
-        with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+        with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
                   'rb') as f:
             max_like_params_multiple = pickle.load(f)
 
@@ -1975,9 +1975,9 @@ def fig_6_f(out_path="Figures\\Fig6\\f", saved_calcs_path="Figures\SavedCalcs", 
         multiple_no_pruning_likelihoods = np.zeros((num_splits, data_ages.size))
         for split in range(1, num_splits + 1):
             smi = max_like_params_multiple[f'split{split}']['S-']
-            multiple_no_pruning_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{0:.5f}"
-            multiple_pruning_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{smi:.5f}"
-            data_path = f"CElegansData\InferredTypes\ConsistentBirthTimes\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
+            multiple_no_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{0:.5f}"
+            multiple_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{smi:.5f}"
+            data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
 
             cur_idx = 0
             for age in data_ages:
@@ -2016,14 +2016,14 @@ def fig_6_f(out_path="Figures\\Fig6\\f", saved_calcs_path="Figures\SavedCalcs", 
         ax1.set_xticklabels([str(i) for i in xticks], fontsize=fontsize)
         ax1.set_yticks(yticks)
         ax1.set_yticklabels([str(i) for i in yticks], fontsize=fontsize)
-        ax1.set_xlim(FULL_DEVELOPMENT_AGES_CONSISTENT[0] - 200, ADULT_WORM_AGE + 200)
+        ax1.set_xlim(FULL_DEVELOPMENTAL_AGES[0] - 200, ADULT_WORM_AGE + 200)
         ax1.set_ylim(-16, 31)
         ax1.set_xlabel('worm age [min.]', fontsize=fontsize, labelpad=axes_labelpad)
         ax1.set_ylabel(r'$\log _{10} ( \mathcal{L} _{\mathrm{pruning}} / \mathcal{L} _{\mathrm{no \: pruning}} )$',
                        fontsize=fontsize,
                        labelpad=axes_labelpad - 5)
 
-        ax1.plot([FULL_DEVELOPMENT_AGES_CONSISTENT[0] - 100, ADULT_WORM_AGE + 100], [0, 0],
+        ax1.plot([FULL_DEVELOPMENTAL_AGES[0] - 100, ADULT_WORM_AGE + 100], [0, 0],
                  c=adjust_lightness('grey', 1.5), markersize=markersize)
         ax1.plot(data_ages, np.log10(np.exp(1)) * (
                 multiple_pruning_likelihoods[split - 1] - multiple_no_pruning_likelihoods[split - 1]), '.',
@@ -2047,14 +2047,14 @@ def fig_6_f(out_path="Figures\\Fig6\\f", saved_calcs_path="Figures\SavedCalcs", 
     ax1.set_xticklabels([str(i) for i in xticks], fontsize=fontsize)
     ax1.set_yticks(yticks)
     ax1.set_yticklabels([str(i) for i in yticks], fontsize=fontsize)
-    ax1.set_xlim(FULL_DEVELOPMENT_AGES_CONSISTENT[0] - 200, ADULT_WORM_AGE + 200)
+    ax1.set_xlim(FULL_DEVELOPMENTAL_AGES[0] - 200, ADULT_WORM_AGE + 200)
     ax1.set_ylim(-15, 31)
     ax1.set_xlabel('worm age [min.]', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel(r'$\log _{10} ( \mathcal{L} _{\mathrm{pruning}} / \mathcal{L} _{\mathrm{no \: pruning}} )$',
                    fontsize=fontsize,
                    labelpad=axes_labelpad - 5)
 
-    ax1.plot([FULL_DEVELOPMENT_AGES_CONSISTENT[0] - 100, ADULT_WORM_AGE + 100], [0, 0],
+    ax1.plot([FULL_DEVELOPMENTAL_AGES[0] - 100, ADULT_WORM_AGE + 100], [0, 0],
              c=adjust_lightness('grey', 1.5), markersize=markersize)
     ax1.errorbar(data_ages,
                  np.log10(np.exp(1)) * (multiple_pruning_likelihoods - multiple_no_pruning_likelihoods).mean(axis=0),
@@ -2070,9 +2070,9 @@ def fig_6_f(out_path="Figures\\Fig6\\f", saved_calcs_path="Figures\SavedCalcs", 
 def fig_7_a(out_path="Figures\\Fig7\\a", saved_calcs_path="Figures\SavedCalcs", is_saved=False, do_save=True):
     num_splits = 20
     data_ages = np.array(
-        [FULL_DEVELOPMENT_AGES_CONSISTENT[stage] for stage in sorted(FULL_DEVELOPMENT_AGES_CONSISTENT.keys())])
+        [FULL_DEVELOPMENTAL_AGES[stage] for stage in sorted(FULL_DEVELOPMENTAL_AGES.keys())])
     train_or_test = 'Test'
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     if not is_saved:
@@ -2080,7 +2080,7 @@ def fig_7_a(out_path="Figures\\Fig7\\a", saved_calcs_path="Figures\SavedCalcs", 
         model_variance_std = np.zeros((num_splits, ADULT_WORM_AGE // 10))
         for split in range(1, num_splits + 1):
             smi_multiple = max_like_params_multiple[f'split{split}']['S-']
-            model_test_dyads_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\ThreeDevStages\{train_or_test}Set\\split{split}\\{smi_multiple:.5f}"
+            model_test_dyads_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\{train_or_test}Set\\split{split}\\{smi_multiple:.5f}"
             for dyads_file in os.listdir(model_test_dyads_path):
                 with open(os.path.join(model_test_dyads_path, dyads_file), 'rb') as f:
                     dyads_dist = pickle.load(f)
@@ -2089,25 +2089,28 @@ def fig_7_a(out_path="Figures\\Fig7\\a", saved_calcs_path="Figures\SavedCalcs", 
 
                 model_variance[split - 1, cur_idx], model_variance_std[
                     split - 1, cur_idx] = calc_reciprocal_dependence_model_variance_from_dyads_dist_str_keys(dyads_dist)
-
-    model_data_cross_variances = np.zeros((num_splits, len(FULL_DEVELOPMENT_AGES_CONSISTENT.keys())))
-    model_data_cross_variances_std = np.zeros((num_splits, len(FULL_DEVELOPMENT_AGES_CONSISTENT.keys())))
-    for split in range(1, num_splits + 1):
-        test_data_path = f"CElegansData\InferredTypes\ConsistentBirthTimes\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
-        for data_age in data_ages:
-            dataset_idx = list(data_ages).index(data_age) + 1
-            if dataset_idx == 7:
-                dataset_idx = 8
-            model_data_cross_variances[split - 1, min(dataset_idx - 1, 6)], model_data_cross_variances_std[
-                split - 1, min(dataset_idx - 1,
-                               6)] = calc_reciprocal_dependence_model_data_cross_variance_from_dyads_dist_str_keys(
-                dyads_dist, os.path.join(test_data_path, f"Dataset{dataset_idx}.pkl"))
-
     else:
         with open(os.path.join(saved_calcs_path, "variances_across_ages_and_splits.pkl"), 'rb') as f:
             model_variance = pickle.load(f)
         with open(os.path.join(saved_calcs_path, "variance_stds_across_ages_and_splits.pkl"), 'rb') as f:
             model_variance_std = pickle.load(f)
+
+    model_data_cross_variances = np.zeros((num_splits, len(FULL_DEVELOPMENTAL_AGES.keys())))
+    model_data_cross_variances_std = np.zeros((num_splits, len(FULL_DEVELOPMENTAL_AGES.keys())))
+    for split in range(1, num_splits + 1):
+        test_data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
+        smi_multiple = max_like_params_multiple[f'split{split}']['S-']
+        model_test_dyads_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{smi_multiple:.5f}"
+        for data_age in data_ages:
+            dataset_idx = list(data_ages).index(data_age) + 1
+            if dataset_idx == 7:
+                dataset_idx = 8
+            with open(os.path.join(model_test_dyads_path, f'{data_age}.pkl'), 'rb') as f:
+                dyads_dist = pickle.load(f)
+            model_data_cross_variances[split - 1, min(dataset_idx - 1, 6)], model_data_cross_variances_std[
+                split - 1, min(dataset_idx - 1,
+                               6)] = calc_reciprocal_dependence_model_data_cross_variance_from_dyads_dist_str_keys(
+                dyads_dist, os.path.join(test_data_path, f"Dataset{dataset_idx}.pkl"))
 
     if do_save:
         with open(os.path.join(saved_calcs_path, "variances_across_ages_and_splits.pkl"), 'wb') as f:
@@ -2182,7 +2185,7 @@ def fig_7_a(out_path="Figures\\Fig7\\a", saved_calcs_path="Figures\SavedCalcs", 
 
 
 def fig_7_b(out_path="Figures\\Fig7\\b"):
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
@@ -2207,7 +2210,7 @@ def fig_7_b(out_path="Figures\\Fig7\\b"):
 
     for split in range(1, num_splits + 1):
         smi = max_like_params_multiple[f'split{split}']['S-']
-        model_test_dyads_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\ThreeDevStages\TestSet\\split{split}\\{smi:.5f}\\3500.pkl"
+        model_test_dyads_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\TestSet\\split{split}\\{smi:.5f}\\3500.pkl"
         with open(model_test_dyads_path, 'rb') as f:
             model_test_dyads = pickle.load(f)
         model_probs = construct_probs_array_from_dyads_dist_string_keys(model_test_dyads)
@@ -2253,10 +2256,10 @@ def fig_7_b(out_path="Figures\\Fig7\\b"):
 
 
 def fig_7_c(out_path="Figures\\Fig7\\c"):
-    worm_7_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset7.pkl'
+    worm_7_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
     with open(worm_7_path, 'rb') as f:
         worm_7 = pickle.load(f)
-    worm_8_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    worm_8_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
     with open(worm_8_path, 'rb') as f:
         worm_8 = pickle.load(f)
     worm_atlas_path = 'CElegansData\\worm_atlas_sub_connectome_chemical_no_autosynapses_subtypes.pkl'
@@ -2265,7 +2268,7 @@ def fig_7_c(out_path="Figures\\Fig7\\c"):
 
     data_sets_list = [worm_7, worm_8, worm_atlas]
 
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
@@ -2291,7 +2294,7 @@ def fig_7_c(out_path="Figures\\Fig7\\c"):
 
     for split in range(1, num_splits + 1):
         smi = max_like_params_multiple[f'split{split}']['S-']
-        model_test_dyads_dists_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\dyads_distributions\ThreeDevStages\{train_or_test}Set\\split{split}\\{smi:.5f}\\3500.pkl"
+        model_test_dyads_dists_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\{train_or_test}Set\\split{split}\\{smi:.5f}\\3500.pkl"
         with open(model_test_dyads_dists_path, 'rb') as f:
             dyads_dists = pickle.load(f)
 
@@ -2429,10 +2432,10 @@ def fig_7_c(out_path="Figures\\Fig7\\c"):
 
 
 def fig_7_d(out_path="Figures\\Fig7\\d"):
-    worm_7_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset7.pkl'
+    worm_7_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
     with open(worm_7_path, 'rb') as f:
         worm_7 = pickle.load(f)
-    worm_8_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    worm_8_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
     with open(worm_8_path, 'rb') as f:
         worm_8 = pickle.load(f)
     worm_atlas_path = 'CElegansData\\worm_atlas_sub_connectome_chemical_no_autosynapses_subtypes.pkl'
@@ -2441,7 +2444,7 @@ def fig_7_d(out_path="Figures\\Fig7\\d"):
 
     data_sets_list = [worm_7, worm_8, worm_atlas]
 
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
@@ -2466,7 +2469,7 @@ def fig_7_d(out_path="Figures\\Fig7\\d"):
 
     for split in range(1, num_splits + 1):
         smi = max_like_params_multiple[f'split{split}']['S-']
-        model_test_dyads_dists_path = f"SavedOutputs\\ReciprocalModel\BirthTimesConsistent\dyads_distributions\ThreeDevStages\TestSet\\split{split}\\{smi:.5f}\\3500.pkl"
+        model_test_dyads_dists_path = f"SavedOutputs\\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\TestSet\\split{split}\\{smi:.5f}\\3500.pkl"
         with open(model_test_dyads_dists_path, 'rb') as f:
             dyads_dists = pickle.load(f)
 
@@ -2582,7 +2585,7 @@ def fig_7_d(out_path="Figures\\Fig7\\d"):
 
 
 def supplement_noisy_birth_times(out_path="Figures\\FigS_noised_birth_times"):
-    data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
@@ -2661,8 +2664,9 @@ def supplement_noisy_birth_times(out_path="Figures\\FigS_noised_birth_times"):
     plt.savefig(os.path.join(out_path, "true_noisy_auc_diff_subtypes.pdf"), format='pdf')
     plt.show()
 
+
 def supplement_auc_vs_number_of_inferred_types(out_path="Figures\\FigS_num_types_choice"):
-    data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
@@ -2705,7 +2709,7 @@ def supplement_outputs_control_overfit(out_path="Figures\\FigS_num_types_choice"
     aucs_data = np.zeros(max_num_learned_types)
     aucs_controls_means_test = np.zeros(max_num_learned_types)
     aucs_controls_stds_test = np.zeros(max_num_learned_types)
-    with open("CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl", 'rb') as f:
+    with open("CElegansData\SubTypes\\connectomes\Dataset8.pkl", 'rb') as f:
         data_connectome = pickle.load(f)
         data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
         data_adj_mat = data_adj_mat.flatten()
@@ -2831,26 +2835,11 @@ def fig_compressed_models_a_b(out_path="Figures\\FigCompressedModels"):
 
 def fig_compressed_models_c(out_path="Figures\\FigCompressedModels"):
     num_types = 8
-    data_connectome_path = 'CElegansData\SubTypes\FullDataset\connectomes\Dataset8.pkl'
+    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
     data_adj_mat = data_adj_mat.astype(int)
-    # compact_models_path = os.path.join("SavedOutputs", "IndependentModel", "compact_models")
-    # # 0.2 is identical to 0.15 and 0.1 to 0.05
-    # performance_fractions = np.array([0.15, 0.05, 0.01])
-    # models_auc = np.zeros(performance_fractions.size + 1)
-    # models_num_parameters = np.zeros(performance_fractions.size + 1)
-    # for i, frac in enumerate(performance_fractions):
-    #     av_mat_path = os.path.join(compact_models_path, f'{frac:.2f}_performance_decrease', f'{num_types}',
-    #                                'compact_model_av_mat.pkl')
-    #     with open(av_mat_path, 'rb') as f:
-    #         av_mat = pickle.load(f)
-    #     models_auc[i] = roc_auc_score(data_adj_mat.flatten(), av_mat.flatten())
-    #     num_params_path = os.path.join(compact_models_path, f'{frac:.2f}_performance_decrease', f'{num_types}',
-    #                                    'compact_size.pkl')
-    #     with open(num_params_path, 'rb') as f:
-    #         models_num_parameters[i] = pickle.load(f) + 2
 
     compressed_models_num_spls = np.arange(2, 52)
     compressed_models_path = os.path.join("SavedOutputs", "IndependentModel", "compact_models",
@@ -2865,7 +2854,6 @@ def fig_compressed_models_c(out_path="Figures\\FigCompressedModels"):
     with open(full_model_av_mat_path, 'rb') as f:
         full_model_av_mat = pickle.load(f)
     models_auc[-1] = roc_auc_score(data_adj_mat.flatten(), full_model_av_mat.flatten())
-    # models_num_parameters[-1] = num_types ** 2 + 2
 
     fontsize = FONT_SIZE
     markersize = 3 * MARKER_SIZE
@@ -2885,9 +2873,6 @@ def fig_compressed_models_c(out_path="Figures\\FigCompressedModels"):
     ax1.set_xlabel('# model parameters', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel('AUROC', fontsize=fontsize, labelpad=axes_labelpad)
 
-    # ax1.scatter(models_num_parameters, models_auc,
-    #             color=[np.zeros(3), 0.5 * np.ones(3), np.zeros(3), SINGLE_EPOCH_INFERRED_COLOR], s=markersize, zorder=2)
-    # ax1.plot(models_num_parameters, models_auc, color='k', lw=line_width, zorder=1)
     models_num_parameters = np.zeros(compressed_models_num_spls.size + 1)
     models_num_parameters[:-1] = compressed_models_num_spls
     models_num_parameters[-1] = num_types ** 2
@@ -2939,7 +2924,7 @@ def supplement_reciprocity_independent_model(out_path="Figures\\FigS_reciprocity
     max_type_number = 50
     mean_reciprocities = np.zeros(max_type_number)
     std_reciprocities = np.zeros(max_type_number)
-    with open("CElegansData\SubTypes\FullDataset\connectomes\Dataset7.pkl", 'rb') as f:
+    with open("CElegansData\SubTypes\\connectomes\Dataset7.pkl", 'rb') as f:
         data_connectome = pickle.load(f)
     data_reciprocity = calc_reciprocity(data_connectome)
     num_neurons = len(data_connectome.nodes)
@@ -2983,7 +2968,7 @@ def supplement_reciprocity_reciprocal_model(out_path="Figures\\FigS_reciprocity"
                                             saved_calcs_path="SavedOutputs\ReciprocalModel\FullDataset\dyads_distributions\8_types",
                                             is_saved=False, do_save=True):
     num_types = 8
-    train_data_path = f"CElegansData\InferredTypes\FullDataset\connectomes\\{num_types}_types\\Dataset7.pkl"
+    train_data_path = f"CElegansData\InferredTypes\connectomes\\{num_types}_types\\Dataset7.pkl"
     with open(train_data_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_reciprocity = calc_reciprocity(data_connectome)
@@ -3056,13 +3041,13 @@ def supplement_spl_mats_across_dev(out_path="Figures\\FigS_S+s_across_dev"):
         [INFERRED_TYPES_LABEL_TO_INDEX[label] for label in sorted(INFERRED_TYPES_LABEL_TO_INDEX.keys())]).reshape(
         num_types, 1)
 
-    with open("SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
 
     num_splits = 20
     average_spl_mats_per_stage = []
-    for i in range(len(THREE_DEVELOPMENTAL_AGES_CONSISTENT.keys())):
+    for i in range(len(THREE_DEVELOPMENTAL_AGES.keys())):
         average_spl_mats_per_stage.append(np.zeros((num_types, num_types)))
 
     max_value = np.log10(1)
@@ -3081,14 +3066,14 @@ def supplement_spl_mats_across_dev(out_path="Figures\\FigS_S+s_across_dev"):
 
     for split in range(1, num_splits + 1):
         smi = max_like_params_multiple[f'split{split}']['S-']
-        likelihoods_path = f"SavedOutputs\ReciprocalModel\BirthTimesConsistent\likelihoods\ThreeDevStages\split{split}"
+        likelihoods_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\likelihoods\ThreeDevStages\split{split}"
         _, beta, _ = find_max_likelihood_full_model(likelihoods_path, smi_value=float(f'{smi:.5f}'))
         spls_file_name = f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl"
-        spls_path = os.path.join("SavedOutputs\ReciprocalModel\BirthTimesConsistent\S+s\ThreeDevStages",
+        spls_path = os.path.join("SavedOutputs\ReciprocalModel\\DyadsSplit\S+s\ThreeDevStages",
                                  f"split{split}",
                                  spls_file_name)
 
-        for dev_stage in range(len(THREE_DEVELOPMENTAL_AGES_CONSISTENT.keys())):
+        for dev_stage in range(len(THREE_DEVELOPMENTAL_AGES.keys())):
             cur_spls_mat, _ = convert_spls_dict_to_mat(spls_path, developmental_stage=dev_stage)
             cur_spls_mat = cur_spls_mat[sorted_inferred_types_indices, sorted_inferred_types_indices.T]
             average_spl_mats_per_stage[dev_stage] += cur_spls_mat
@@ -3112,7 +3097,7 @@ def supplement_spl_mats_across_dev(out_path="Figures\\FigS_S+s_across_dev"):
             plt.show(block=False)
             plt.pause(3)
             plt.close()
-    for i in range(len(THREE_DEVELOPMENTAL_AGES_CONSISTENT.keys())):
+    for i in range(len(THREE_DEVELOPMENTAL_AGES.keys())):
         average_spl_mat = average_spl_mats_per_stage[i] / num_splits
         fig = plt.figure(figsize=SQUARE_FIG_SIZE)
         ax = fig.add_axes(main_axes)
@@ -3141,16 +3126,16 @@ if __name__ == "__main__":
     fig_1_d_e_f()
     fig_1_g()
 
-    fig_2_b(is_saved=True, do_save=False)
-    fig_2_c(is_saved=True, do_save=False)
-    fig_2_d(is_saved=True, do_save=False)
+    fig_2_b()
+    fig_2_c()
+    fig_2_d()
     fig_2_e_f_g()
 
     fig_graph_features_a()
     fig_graph_features_b()
     fig_graph_features_c_d()
-    fig_graph_features_e(is_saved=True, do_save=False)
-    fig_graph_features_f(is_saved=True, do_save=False)
+    fig_graph_features_e()
+    fig_graph_features_f()
 
     fig_inferred_types_bio_interpretation_a()
     fig_inferred_types_bio_interpretation_b()
@@ -3163,10 +3148,10 @@ if __name__ == "__main__":
     fig_6_a()
     fig_6_b()
     fig_6_d()
-    fig_6_e(is_saved=True, do_save=False)
-    fig_6_f(is_saved=True, do_save=False)
+    fig_6_e()
+    fig_6_f()
 
-    fig_7_a(is_saved=True, do_save=False)
+    fig_7_a()
     fig_7_b()
     fig_7_c()
     fig_7_d()
@@ -3177,6 +3162,6 @@ if __name__ == "__main__":
     supplement_outputs_control_overfit()
 
     supplement_reciprocity_independent_model()
-    supplement_reciprocity_reciprocal_model(is_saved=True, do_save=False)
+    supplement_reciprocity_reciprocal_model()
 
     supplement_spl_mats_across_dev()

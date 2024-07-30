@@ -646,14 +646,14 @@ def _save_max_like_params_per_split(likelihoods_path, out_path):
 
 
 def save_max_like_params_per_split_single_epoch():
-    likelihoods_path = f'SavedOutputs\ReciprocalModel\BirthTimesConsistent\likelihoods\\SingleDevStage'
-    out_path = f'SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_single_epoch.pkl'
+    likelihoods_path = f'SavedOutputs\ReciprocalModel\\DyadsSplit\likelihoods\\SingleDevStage'
+    out_path = f'SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_single_epoch.pkl'
     _save_max_like_params_per_split(likelihoods_path, out_path)
 
 
 def save_max_like_params_per_split_three_epochs():
-    likelihoods_path = f'SavedOutputs\ReciprocalModel\BirthTimesConsistent\likelihoods\\ThreeDevStages'
-    out_path = f'SavedOutputs\ReciprocalModel\BirthTimesConsistent\\max_likelihood_params_per_split_3_epochs.pkl'
+    likelihoods_path = f'SavedOutputs\ReciprocalModel\\DyadsSplit\likelihoods\\ThreeDevStages'
+    out_path = f'SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl'
     _save_max_like_params_per_split(likelihoods_path, out_path)
 
 
