@@ -1,6 +1,14 @@
 # BrainBuildingPaper
 A repository for the software used in the paper "Building a small brain with a simple stochastic generative model"
 
+## Installtion, dependencies and requirements
+The repository is implemented in Python (version 3.9).
+It was developed on a Windows 10 computer. Some of the logic is intended to run on a single machine (and there may be system-speific issues such as path syntax, but the most is system-agnostic). These parts can run on a standard computer in a reasonable time.
+
+There are parts that require a computing cluster for parallel computations, and were specifically developed for an IBM LSF cluster.
+
+To install the dependencies run the following command in the terminal: `pip install -r requirements.txt`. This should take a few minutes.
+
 ## Short description of files and folders
 ### CElegansData
 Contains the data (raw and processed) that is used for analyses.
