@@ -1,14 +1,18 @@
 import numpy as np
 import pickle
 from copy import deepcopy
+from itertools import product
+import os
 
 from c_elegans_independent_model_training import calc_elongation_factor, convert_spls_dict_to_spls_across_dev, \
-    count_synapses_of_type
+    count_synapses_of_type, average_matrix_log_likelihood
 from c_elegans_reciprocal_model_training import single_binary_search_update
+from c_elegans_constants import ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE
+from CElegansNeuronsAdder import CElegansNeuronsAdder
 
 
-def p_synapse_is_formed(spls_across_dev, smi, beta, developmental_ages, time_passed_from_given_state,
-                        time_of_given_state, norm_length, given_past_state=0, time_step=10):
+def p_synapse_is_formed_syn_count_model(spls_across_dev, smi, beta, developmental_ages, time_passed_from_given_state,
+                                        time_of_given_state, norm_length, given_past_state=0, time_step=10):
     # Initialize the matrix of pmf of the number of synapses across time (the i,j-th entry of
     # `num_synapses_pmf_across_time` is the probability to see j synapses at timestep i).
     num_time_steps_for_calculation = int(time_passed_from_given_state / time_step)
@@ -33,38 +37,43 @@ def p_synapse_is_formed(spls_across_dev, smi, beta, developmental_ages, time_pas
             if abs(syn_count - given_past_state) > step:
                 continue
 
-            # The probability to have no synapses is the probability of having no synapses at the previous stage, and
-            # not forming any now.
-            elif syn_count == 0:
-                num_synapses_pmf_across_time[step, syn_count] = num_synapses_pmf_across_time[step - 1, syn_count] * (
-                        1 - smi)
+            # Don't form a connection.
+            prob_of_staying_the_same = num_synapses_pmf_across_time[step - 1, syn_count] * (
+                    1 - formation_prob)
+            # If there are connections
+            if syn_count > 0:
+                # Don't prune exising ones (this refers to the case that a connection was not formed, initialized
+                # above).
+                prob_of_staying_the_same *= (1 - smi)
+                # Form and prune ones
+                prob_of_staying_the_same += num_synapses_pmf_across_time[step - 1, syn_count] * formation_prob * smi
 
-            # Handel the edge case of the maximal number of synapses - there is no entry holding the probability for
-            # more synapses in the matrix. The probability is to have 1 less at the previous step, to form now, and to
-            # not erase anything.
-            elif syn_count == max_num_synapses_at_the_end:
-                num_synapses_pmf_across_time[step, syn_count] = (
-                        num_synapses_pmf_across_time[step - 1, syn_count - 1] * formation_prob * (1 - smi))
-
-            else:
-                # Don't prune and don't form
-                prob_to_stay_the_same = num_synapses_pmf_across_time[step - 1, syn_count] * (1 - smi) * (
-                        1 - formation_prob)
-
-                # Form a connection
-                prob_to_add_connection = num_synapses_pmf_across_time[step - 1, syn_count - 1] * formation_prob
+            # Form a connection
+            if syn_count > 0:
+                prob_of_adding_connection = num_synapses_pmf_across_time[step - 1, syn_count - 1] * formation_prob
                 # If there were connections before, don't prune them
                 if syn_count - 1 > 0:
-                    prob_to_add_connection *= (1 - smi)
+                    prob_of_adding_connection *= (1 - smi)
+            # It is not possible to reach 0 synapses by adding a connection
+            else:
+                prob_of_adding_connection = 0
 
-                prob_to_remove_connection = num_synapses_pmf_across_time[step - 1, syn_count + 1] * smi * (
+            if syn_count < max_num_synapses_at_the_end:
+                # Remove the connection and don't form another one
+                prob_of_removing_connection = num_synapses_pmf_across_time[step - 1, syn_count + 1] * smi * (
                         1 - formation_prob)
+            # It is not possible to reach the maximal number of synapses by removing a connection (this is only
+            # reachable if a connection was added in every interation, and never pruned).
+            else:
+                prob_of_removing_connection = 0
 
-                num_synapses_pmf_across_time[
-                    step, syn_count] = prob_to_stay_the_same + prob_to_add_connection + prob_to_remove_connection
+            num_synapses_pmf_across_time[
+                step, syn_count] = prob_of_staying_the_same + prob_of_adding_connection + prob_of_removing_connection
 
+    # assert (np.abs(num_synapses_pmf_across_time.sum(axis=1) - 1).max() < 10 ** -14)
     # The probability to have at least one synapse at the final step
-    return num_synapses_pmf_across_time[-1, 1:].sum()
+    # return num_synapses_pmf_across_time[-1, 1:].sum()
+    return 1 - num_synapses_pmf_across_time[-1, 0]
 
 
 def calc_expected_num_synapses_type_pair(neuronal_types_pair, smi, beta, reference_age, developmental_ages, spls,
@@ -94,8 +103,9 @@ def calc_expected_num_synapses_type_pair(neuronal_types_pair, smi, beta, referen
             norm_dist_between_neurons = np.linalg.norm(
                 data.nodes[pre_neuron]['coords'] - data.nodes[post_neuron]['coords'])
 
-            expected_num_synapses += p_synapse_is_formed(spls_across_dev, smi, beta, developmental_ages, synapse_age,
-                                                         reference_age, norm_dist_between_neurons)
+            expected_num_synapses += p_synapse_is_formed_syn_count_model(spls_across_dev, smi, beta, developmental_ages,
+                                                                         synapse_age, synapse_birth_time,
+                                                                         norm_dist_between_neurons)
 
     return expected_num_synapses
 
@@ -112,7 +122,7 @@ def search_spl_syn_count_model(neuronal_types_pair, smi, beta, reference_age, de
     num_synapses_in_data = count_synapses_of_type(neuronal_types_pair, type_configuration, data_path=data_path)
     expected_num_synapses_model = calc_expected_num_synapses_type_pair(neuronal_types_pair, smi, beta, reference_age,
                                                                        developmental_ages, spls_copy, data_path)
-    iter = 0
+    iteration = 0
     while abs(expected_num_synapses_model - num_synapses_in_data) > tolerance:
         spls_copy[new_dev_stage][neuronal_types_pair] = single_binary_search_update(num_synapses_in_data,
                                                                                     expected_num_synapses_model,
@@ -120,9 +130,100 @@ def search_spl_syn_count_model(neuronal_types_pair, smi, beta, reference_age, de
         expected_num_synapses_model = calc_expected_num_synapses_type_pair(neuronal_types_pair, smi, beta,
                                                                            reference_age,
                                                                            developmental_ages, spls_copy, data_path)
-        if iter > 2 * 10 * np.log(10) / np.log(2):
+        if iteration > 2 * 10 * np.log(10) / np.log(2):
             # Probably the number of synapses can't be reached up to the tolerance with the given parameters, as the
             # size of the square side is already smaller than 10e-10.
             break
-        iter += 1
+        iteration += 1
     return spls_copy[new_dev_stage][neuronal_types_pair]
+
+
+def calc_syn_count_model_average_mat(smi, beta, spls, reference_age, developmental_ages, data_path):
+    with open(data_path, 'rb') as f:
+        data = pickle.load(f)
+
+    sorted_nodes = sorted(list(data.nodes))
+    sorted_nodes_before_reference_age = []
+    for neuron in sorted_nodes:
+        if data.nodes[neuron]['birth_time'] < reference_age:
+            sorted_nodes_before_reference_age.append(neuron)
+    num_neurons = len(sorted_nodes_before_reference_age)
+    adj_mat = np.zeros((num_neurons, num_neurons))
+    pre_idx = 0
+    for pre in sorted_nodes_before_reference_age:
+        post_idx = 0
+        for post in sorted_nodes_before_reference_age:
+            if pre == post:
+                post_idx += 1
+                continue
+            synapse_birth_time = max(data.nodes[pre]['birth_time'], data.nodes[post]['birth_time'])
+            pre_type = data.nodes[pre]['type']
+            post_type = data.nodes[post]['type']
+            spls_across_dev = convert_spls_dict_to_spls_across_dev(spls, pre_type, post_type)
+
+            synapse_age = reference_age - synapse_birth_time
+            synapse_length = np.linalg.norm(data.nodes[pre]['coords'] - data.nodes[post]['coords'])
+            p = p_synapse_is_formed_syn_count_model(spls_across_dev, smi, beta, developmental_ages, synapse_age,
+                                                    synapse_birth_time, synapse_length)
+            adj_mat[pre_idx, post_idx] = p
+            post_idx += 1
+        pre_idx += 1
+
+    return adj_mat
+
+
+def train_single_epoch_syn_count_model_distributed():
+    func_id = int(os.environ['LSB_JOBINDEX']) - 1
+    num_types = func_id // 1600 + 1
+    func_id = func_id % 1600
+    cur_path = os.getcwd()
+    params_path = os.path.join(cur_path, "ParamFiles", "spl_per_type_params_low_smi_low_beta.pkl")
+    with open(params_path, 'rb') as f:
+        params = pickle.load(f)
+    smi = params[func_id, 0]
+    beta = params[func_id, 1]
+    train_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "connectomes", f"{num_types}_types",
+                                   "Dataset7.pkl")
+    out_spl_path = os.path.join(cur_path, "SavedOutputs", "SynCountModel", "S+s", f"{num_types}_types")
+    os.makedirs(out_spl_path, exist_ok=True)
+    out_like_path = os.path.join(cur_path, "SavedOutputs", "SynCountModel", "likelihoods", f"{num_types}_types")
+    os.makedirs(out_like_path, exist_ok=True)
+    out_av_mat_path = os.path.join(cur_path, "SavedOutputs", "SynCountModel", "average_adj_mats", f"{num_types}_types")
+    os.makedirs(out_av_mat_path, exist_ok=True)
+    spls = {0: {i: 0 for i in list(product(list(range(num_types)), list(range(num_types))))}}
+    for type_pair in spls[0].keys():
+        spls[0][type_pair] = search_spl_syn_count_model(type_pair, smi, beta, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE,
+                                                        spls, CElegansNeuronsAdder.ARTIFICIAL_TYPES, train_data_path)
+    with open(out_spl_path, 'wb') as f:
+        pickle.dump(spls, f)
+
+    av_mat = calc_syn_count_model_average_mat(smi, beta, spls, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE, train_data_path)
+    with open(out_av_mat_path, 'wb') as f:
+        pickle.dump(av_mat, f)
+
+    log_like = average_matrix_log_likelihood(av_mat, train_data_path)
+    log_like_file_path = os.path.join(out_like_path, f"{func_id}.csv")
+    with open(log_like_file_path, 'w') as f:
+        f.write(f"smi,beta,log-likelihood\n{smi},{beta},{log_like}\n")
+
+
+def main():
+    train_single_epoch_syn_count_model_distributed()
+    # num_types = 8
+    # data_path = f"CElegansData\\InferredTypes\\connectomes\\{num_types}_types\\Dataset7.pkl"
+    # smi = 0.0375
+    # beta = 0.0125
+    # spls = {0: {i: 0 for i in list(product(list(range(num_types)), list(range(num_types))))}}
+    # for type_pair in spls[0].keys():
+    #     spls[0][type_pair] = search_spl_syn_count_model(type_pair, smi, beta, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE,
+    #                                                     spls, CElegansNeuronsAdder.ARTIFICIAL_TYPES, data_path)
+    # with open("D:\OrenRichter\\temp\syn_count_model\\spls.pkl", 'wb') as f:
+    #     pickle.dump(spls, f)
+    #
+    # av_mat = calc_syn_count_model_average_mat(smi, beta, spls, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE, data_path)
+    # with open("D:\OrenRichter\\temp\syn_count_model\\av_mat.pkl", 'wb') as f:
+    #     pickle.dump(av_mat, f)
+
+
+if __name__ == "__main__":
+    main()
