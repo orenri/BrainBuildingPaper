@@ -117,7 +117,7 @@ def search_spl_syn_count_model(neuronal_types_pair, smi, beta, reference_age, de
         new_dev_stage += 1
 
     spls_copy = deepcopy(spls)
-    cur_search_window = np.array([0, 1])
+    cur_search_window = np.array([0.0, 1.0])
     spls_copy[new_dev_stage][neuronal_types_pair] = (cur_search_window[1] + cur_search_window[0]) / 2
     num_synapses_in_data = count_synapses_of_type(neuronal_types_pair, type_configuration, data_path=data_path)
     expected_num_synapses_model = calc_expected_num_synapses_type_pair(neuronal_types_pair, smi, beta, reference_age,
@@ -130,9 +130,12 @@ def search_spl_syn_count_model(neuronal_types_pair, smi, beta, reference_age, de
         expected_num_synapses_model = calc_expected_num_synapses_type_pair(neuronal_types_pair, smi, beta,
                                                                            reference_age,
                                                                            developmental_ages, spls_copy, data_path)
+        print(f'neuronal types: {neuronal_types_pair}, iteration: {iteration}, expected # synapses in the model: '
+              f'{expected_num_synapses_model}, search window: {cur_search_window}')
         if iteration > 2 * 10 * np.log(10) / np.log(2):
             # Probably the number of synapses can't be reached up to the tolerance with the given parameters, as the
-            # size of the square side is already smaller than 10e-10.
+            # size of the search window is already smaller than 10e-10.
+            print("Reached iterations limit")
             break
         iteration += 1
     return spls_copy[new_dev_stage][neuronal_types_pair]
@@ -190,15 +193,23 @@ def train_single_epoch_syn_count_model_distributed():
     os.makedirs(out_like_path, exist_ok=True)
     out_av_mat_path = os.path.join(cur_path, "SavedOutputs", "SynCountModel", "average_adj_mats", f"{num_types}_types")
     os.makedirs(out_av_mat_path, exist_ok=True)
-    spls = {0: {i: 0 for i in list(product(list(range(num_types)), list(range(num_types))))}}
-    for type_pair in spls[0].keys():
+    spls_out_path = os.path.join(out_spl_path, f'spls_smi{smi:.5f}_beta{beta:.5f}.pkl')
+    if os.path.exists(spls_out_path):
+        with open(spls_out_path, 'rb') as f:
+            spls = pickle.load(f)
+    else:
+        spls = {0: {i: -1 for i in list(product(list(range(num_types)), list(range(num_types))))}}
+    for type_pair in sorted(list(spls[0].keys())):
+        if spls[0][type_pair] != -1:
+            continue
         spls[0][type_pair] = search_spl_syn_count_model(type_pair, smi, beta, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE,
                                                         spls, CElegansNeuronsAdder.ARTIFICIAL_TYPES, train_data_path)
-    with open(out_spl_path, 'wb') as f:
-        pickle.dump(spls, f)
+        with open(spls_out_path, 'wb') as f:
+            pickle.dump(spls, f)
 
-    av_mat = calc_syn_count_model_average_mat(smi, beta, spls, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE, train_data_path)
-    with open(out_av_mat_path, 'wb') as f:
+    av_mat = calc_syn_count_model_average_mat(smi, beta, spls, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE,
+                                              train_data_path)
+    with open(os.path.join(out_av_mat_path, f'av_mat_smi{smi:.5f}_beta{beta:.5f}.pkl'), 'wb') as f:
         pickle.dump(av_mat, f)
 
     log_like = average_matrix_log_likelihood(av_mat, train_data_path)
@@ -207,14 +218,34 @@ def train_single_epoch_syn_count_model_distributed():
         f.write(f"smi,beta,log-likelihood\n{smi},{beta},{log_like}\n")
 
 
+def train_single_epoch_syn_count_model_single_smi_beta_pair_distributed(smi, beta, num_types):
+    train_data_path = f"CElegansData\\InferredTypes\\connectomes\\{num_types}_types\\Dataset7.pkl"
+    func_id = int(os.environ['LSB_JOBINDEX']) - 1
+    all_type_pairs = sorted(list(product(list(range(num_types)), list(range(num_types)))))
+    this_job_type_pair = all_type_pairs[func_id]
+    dummy_spls = {0: {i: -1 for i in list(product(list(range(num_types)), list(range(num_types))))}}
+    cur_path = os.getcwd()
+    out_dir_path = os.path.join(cur_path, "SavedOutputs", "SynCountModel", "S+s", f"{num_types}_types",
+                                f'spls_smi{smi:.5f}_beta{beta:.5f}')
+    os.makedirs(out_dir_path, exist_ok=True)
+    cur_type_pair_spl = search_spl_syn_count_model(this_job_type_pair, smi, beta, ADULT_WORM_AGE,
+                                                   SINGLE_DEVELOPMENTAL_AGE,
+                                                   dummy_spls, CElegansNeuronsAdder.ARTIFICIAL_TYPES, train_data_path)
+
+    with open(os.path.join(out_dir_path, f'{func_id}.pkl'), 'wb') as f:
+        pickle.dump({this_job_type_pair: cur_type_pair_spl}, f)
+
+
 def main():
-    train_single_epoch_syn_count_model_distributed()
-    # num_types = 8
+    # train_single_epoch_syn_count_model_distributed()
+    num_types = 8
+    smi = 0.0375
+    beta = 0.0125
+    train_single_epoch_syn_count_model_single_smi_beta_pair_distributed(smi, beta, num_types)
     # data_path = f"CElegansData\\InferredTypes\\connectomes\\{num_types}_types\\Dataset7.pkl"
-    # smi = 0.0375
-    # beta = 0.0125
     # spls = {0: {i: 0 for i in list(product(list(range(num_types)), list(range(num_types))))}}
-    # for type_pair in spls[0].keys():
+    # from tqdm import tqdm
+    # for type_pair in tqdm(spls[0].keys()):
     #     spls[0][type_pair] = search_spl_syn_count_model(type_pair, smi, beta, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE,
     #                                                     spls, CElegansNeuronsAdder.ARTIFICIAL_TYPES, data_path)
     # with open("D:\OrenRichter\\temp\syn_count_model\\spls.pkl", 'wb') as f:
