@@ -3121,48 +3121,47 @@ def supplement_spl_mats_across_dev(out_path="Figures\\FigS_S+s_across_dev"):
 
 
 if __name__ == "__main__":
-    # fig_1_b()
-    # fig_1_c()
-    # fig_1_d_e_f()
-    # fig_1_g()
-    #
-    # fig_2_b()
-    # fig_2_c()
-    # fig_2_d()
-    # fig_2_e_f_g()
-    #
-    # fig_graph_features_a()
-    # fig_graph_features_b()
-    # fig_graph_features_c_d()
-    # fig_graph_features_e()
-    # fig_graph_features_f()
-    #
-    # fig_inferred_types_bio_interpretation_a()
-    # fig_inferred_types_bio_interpretation_b()
-    # fig_inferred_types_bio_interpretation_c_d()
-    #
-    # fig_compressed_models_a_b()
-    # fig_compressed_models_c()
-    # fig_compressed_models_d()
-    #
-    # fig_6_a()
-    # fig_6_b()
-    # fig_6_d()
-    # fig_6_e()
-    # fig_6_f()
+    fig_1_b()
+    fig_1_c()
+    fig_1_d_e_f()
+    fig_1_g()
 
-    # fig_7_a(out_path="D:\OrenRichter\\temp\Fig7", saved_calcs_path="D:\OrenRichter\\temp\Fig7\\saved_calcs",
-    #         is_saved=False, do_save=True)
-    # fig_7_b()
+    fig_2_b()
+    fig_2_c()
+    fig_2_d()
+    fig_2_e_f_g()
+
+    fig_graph_features_a()
+    fig_graph_features_b()
+    fig_graph_features_c_d()
+    fig_graph_features_e()
+    fig_graph_features_f()
+
+    fig_inferred_types_bio_interpretation_a()
+    fig_inferred_types_bio_interpretation_b()
+    fig_inferred_types_bio_interpretation_c_d()
+
+    fig_compressed_models_a_b()
+    fig_compressed_models_c()
+    fig_compressed_models_d()
+
+    fig_6_a()
+    fig_6_b()
+    fig_6_d()
+    fig_6_e()
+    fig_6_f()
+
+    fig_7_a()
+    fig_7_b()
     fig_7_c()
-    # fig_7_d()
-    #
-    # supplement_noisy_birth_times()
-    #
-    # supplement_auc_vs_number_of_inferred_types()
-    # supplement_outputs_control_overfit()
-    #
-    # supplement_reciprocity_independent_model()
-    # supplement_reciprocity_reciprocal_model()
-    #
-    # supplement_spl_mats_across_dev()
+    fig_7_d()
+
+    supplement_noisy_birth_times()
+
+    supplement_auc_vs_number_of_inferred_types()
+    supplement_outputs_control_overfit()
+
+    supplement_reciprocity_independent_model()
+    supplement_reciprocity_reciprocal_model()
+
+    supplement_spl_mats_across_dev()

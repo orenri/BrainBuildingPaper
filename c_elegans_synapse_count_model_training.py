@@ -219,12 +219,13 @@ def train_single_epoch_syn_count_model_distributed():
 
 
 def train_single_epoch_syn_count_model_single_smi_beta_pair_distributed(smi, beta, num_types):
-    train_data_path = f"CElegansData\\InferredTypes\\connectomes\\{num_types}_types\\Dataset7.pkl"
+    cur_path = os.getcwd()
+    train_data_path = os.path.join(cur_path, "CElegansData", "InferredTypes", "connectomes", f"{num_types}_types",
+                                   "Dataset7.pkl")
     func_id = int(os.environ['LSB_JOBINDEX']) - 1
     all_type_pairs = sorted(list(product(list(range(num_types)), list(range(num_types)))))
     this_job_type_pair = all_type_pairs[func_id]
     dummy_spls = {0: {i: -1 for i in list(product(list(range(num_types)), list(range(num_types))))}}
-    cur_path = os.getcwd()
     out_dir_path = os.path.join(cur_path, "SavedOutputs", "SynCountModel", "S+s", f"{num_types}_types",
                                 f'spls_smi{smi:.5f}_beta{beta:.5f}')
     os.makedirs(out_dir_path, exist_ok=True)
@@ -236,24 +237,28 @@ def train_single_epoch_syn_count_model_single_smi_beta_pair_distributed(smi, bet
         pickle.dump({this_job_type_pair: cur_type_pair_spl}, f)
 
 
+def aggregate_spl_per_type_pair(smi, beta, num_types, data_path):
+    spls = {0: {}}
+    spl_per_type_pair_path = f'Z:\BrainBuildingPaper\SavedOutputs\SynCountModel\S+s\\{num_types}_types\spls_smi{smi:.5f}_beta{beta:.5f}'
+    for file_name in os.listdir(spl_per_type_pair_path):
+        with open(os.path.join(spl_per_type_pair_path, file_name), 'rb') as f:
+            spls[0].update(pickle.load(f))
+    with open("D:\OrenRichter\\temp\syn_count_model\\spls.pkl", 'wb') as f:
+        pickle.dump(spls, f)
+
+    av_mat = calc_syn_count_model_average_mat(smi, beta, spls, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE, data_path)
+    with open("D:\OrenRichter\\temp\syn_count_model\\av_mat.pkl", 'wb') as f:
+        pickle.dump(av_mat, f)
+
+
 def main():
     # train_single_epoch_syn_count_model_distributed()
     num_types = 8
     smi = 0.0375
     beta = 0.0125
-    train_single_epoch_syn_count_model_single_smi_beta_pair_distributed(smi, beta, num_types)
-    # data_path = f"CElegansData\\InferredTypes\\connectomes\\{num_types}_types\\Dataset7.pkl"
-    # spls = {0: {i: 0 for i in list(product(list(range(num_types)), list(range(num_types))))}}
-    # from tqdm import tqdm
-    # for type_pair in tqdm(spls[0].keys()):
-    #     spls[0][type_pair] = search_spl_syn_count_model(type_pair, smi, beta, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE,
-    #                                                     spls, CElegansNeuronsAdder.ARTIFICIAL_TYPES, data_path)
-    # with open("D:\OrenRichter\\temp\syn_count_model\\spls.pkl", 'wb') as f:
-    #     pickle.dump(spls, f)
-    #
-    # av_mat = calc_syn_count_model_average_mat(smi, beta, spls, ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE, data_path)
-    # with open("D:\OrenRichter\\temp\syn_count_model\\av_mat.pkl", 'wb') as f:
-    #     pickle.dump(av_mat, f)
+    # train_single_epoch_syn_count_model_single_smi_beta_pair_distributed(smi, beta, num_types)
+    data_path = f"CElegansData\\InferredTypes\\connectomes\\{num_types}_types\\Dataset7.pkl"
+    aggregate_spl_per_type_pair(smi, beta, num_types, data_path)
 
 
 if __name__ == "__main__":
