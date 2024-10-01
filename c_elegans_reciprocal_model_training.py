@@ -340,7 +340,7 @@ def calc_single_dyad_expected_flipped_synapses_with_given_dyadic_state(single_dy
         ONLY_UPPER_TRIANGLE_SYNAPSE_IDX]
     prob_for_0_flipped_synapses += single_dyad_distribution[ONLY_LOWER_TRIANGLE_SYNAPSE_IDX] * given_state[
         ONLY_LOWER_TRIANGLE_SYNAPSE_IDX]
-    prob_for_0_flipped_synapses += single_dyad_distribution[EMPTY_DYAD_IDX] * single_dyad_distribution[EMPTY_DYAD_IDX]
+    prob_for_0_flipped_synapses += single_dyad_distribution[EMPTY_DYAD_IDX] * given_state[EMPTY_DYAD_IDX]
 
     expected_num_flipped_synapses = prob_for_1_flipped_synapse + 2 * prob_for_2_flipped_synapses
     # E[X**2]-E[X]**2

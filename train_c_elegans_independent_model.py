@@ -90,6 +90,7 @@ def calc_spl_per_type_single_developmental_stage(params_path, out_dir_path, type
 
     with open(os.path.join(out_dir_path, f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl"), 'wb') as f:
         pickle.dump(spls, f)
+    return spls, smi, beta
 
 
 def train_types_and_distances_model_distributed(type_configuration, connectome_name, out_dir_path, neurons_subset_path,
