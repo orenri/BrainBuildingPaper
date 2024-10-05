@@ -37,8 +37,8 @@ def generate_overlap_data(num_types):
     worm_8_adj_mat = nx.to_numpy_array(worm_8, nodelist=node_list)
     worm_atlas_adj_mat = nx.to_numpy_array(worm_atlas, nodelist=node_list)
 
-    worm_atlas_num_types = deepcopy(connectome_template)
-    worm_atlas_num_types.add_edges_from(worm_atlas.edges)
+    worm_atlas_num_types = _create_connectome_copy_from_template_adj_mat(connectome_template, worm_atlas_adj_mat,
+                                                                         node_list)
     with open(os.path.join(data_dir_path, "worm_atlas.pkl"), 'wb') as f:
         pickle.dump(worm_atlas_num_types, f)
 
