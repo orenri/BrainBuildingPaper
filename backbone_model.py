@@ -2,6 +2,7 @@ import os
 import pickle
 import networkx as nx
 from copy import deepcopy
+import numpy as np
 
 from train_c_elegans_independent_model import calc_spl_per_type_single_developmental_stage, explore_model_likelihood
 from CElegansNeuronsAdder import CElegansNeuronsAdder
@@ -12,8 +13,10 @@ from c_elegans_independent_model_training import calc_model_adj_mat
 def _create_connectome_copy_from_template_adj_mat(template, adj_mat, node_list):
     new = deepcopy(template)
     num_nodes = len(node_list)
-    edges = [(node_list[i], node_list[j]) for i in range(num_nodes) for j in range(num_nodes) if
-             adj_mat[i, j]]
+    edges = [(node_list[i], node_list[j], {
+        'length': np.linalg.norm(template.nodes[node_list[j]]['coords'] - template.nodes[node_list[i]]['coords']),
+        'birth time': max(template.nodes[node_list[j]]['birth_time'], template.nodes[node_list[i]]['birth_time'])}) for
+             i in range(num_nodes) for j in range(num_nodes) if adj_mat[i, j]]
     new.add_edges_from(edges)
     return new
 
