@@ -102,12 +102,26 @@ def train_single_stage_inferred_types(connectome_name, num_types,
 def main():
     num_types = 8
     # generate_overlap_data(num_types)
+    # func_id = int(os.environ['LSB_JOBINDEX']) - 1
+    # data_set_names = ["Dataset7.pkl", "Dataset8.pkl", "worm_atlas.pkl", "worms_7_8_overlap.pkl",
+    #                   "worms_7_atlas_overlap.pkl", "worms_8_atlas_overlap.pkl", "worms_7_8_atlas_overlap.pkl"]
+    # data_set_idx = func_id // 1600
+    # data_set_name = data_set_names[data_set_idx]
+    # train_single_stage_inferred_types(data_set_name, num_types)
+
+    # from er_block_model import greedy_type_aggregation
+    # worm_8_path = 'CElegansData\\InferredTypes\\connectomes\\8_types\\Dataset8.pkl'
+    # with open(worm_8_path, 'rb') as f:
+    #     worm_8 = pickle.load(f)
+    # worm_8_adj_mat = nx.to_numpy_array(worm_8, nodelist=sorted(list(worm_8.nodes)))
+    # greedy_type_aggregation(worm_8_adj_mat, "D:\OrenRichter\\temp\\worm_8_greedy_type_aggregation")
+
     func_id = int(os.environ['LSB_JOBINDEX']) - 1
-    data_set_names = ["Dataset7.pkl", "Dataset8.pkl", "worm_atlas.pkl", "worms_7_8_overlap.pkl",
-                      "worms_7_atlas_overlap.pkl", "worms_8_atlas_overlap.pkl", "worms_7_8_atlas_overlap.pkl"]
+    data_set_names = ["Dataset8_worm_8_types.pkl", "worm_atlas_worm_atlas_types.pkl"]
     data_set_idx = func_id // 1600
     data_set_name = data_set_names[data_set_idx]
     train_single_stage_inferred_types(data_set_name, num_types)
+
 
 
 if __name__ == "__main__":
