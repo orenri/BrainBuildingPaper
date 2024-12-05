@@ -9,6 +9,7 @@ import networkx as nx
 from sklearn.metrics import roc_auc_score, roc_curve
 from matplotlib.ticker import LogFormatter
 from tqdm import tqdm
+import pandas as pd
 
 from c_elegans_independent_model_training import sample_from_average_adj_mat, calc_model_adj_mat, \
     convert_spls_dict_to_mat, calc_elongation_factor, average_matrix_log_likelihood
@@ -30,7 +31,8 @@ from c_elegans_reciprocal_model_training import sample_from_dyads_distribution_t
     calc_reciprocal_dependence_model_data_cross_variance_from_dyads_dist_str_keys, RECIPROCAL_DYAD_IDX, \
     ONLY_LOWER_TRIANGLE_SYNAPSE_IDX, ONLY_UPPER_TRIANGLE_SYNAPSE_IDX, \
     calc_reciprocal_dependence_model_dyads_states_distribution, \
-    calc_reciprocal_dependence_model_reciprocity_from_dyads_dist
+    calc_reciprocal_dependence_model_reciprocity_from_dyads_dist, \
+    calc_reciprocal_dependence_model_average_adj_mat_from_dyads_distributions_str_keys
 
 
 def adjust_lightness(color, amount=0.5):
@@ -635,17 +637,12 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
     plt.show()
 
 
-def fig_2_e_f_g(out_path="Figures\\Fig2"):
-    np.random.seed(123456789)
-    num_types = 8
-    train_data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
-    with open(train_data_connectome_path, 'rb') as f:
-        train_data_connectome = pickle.load(f)
-    alphabetic_neuronal_names = sorted(train_data_connectome.nodes)
-    train_data_adj_mat = nx.to_numpy_array(train_data_connectome, nodelist=alphabetic_neuronal_names)
-
-    neurons_list_path = "CElegansData\\nerve_ring_neurons_subset.pkl"
-    neuronal_types_path = f"CElegansData\InferredTypes\\types\\{num_types}.pkl"
+def _get_neurons_idx_by_inferred_type(num_types):
+    neurons_list_path = os.path.join("CElegansData", "nerve_ring_neurons_subset.pkl")
+    with open(neurons_list_path, 'rb') as f:
+        nerve_ring_neurons = pickle.load(f)
+    alphabetic_neuronal_names = sorted(nerve_ring_neurons)
+    neuronal_types_path = os.path.join("CElegansData", "InferredTypes", "types", f"{num_types}.pkl")
 
     neuronal_types_by_names = convert_indices_to_names_in_artificial_types(neuronal_types_path, neurons_list_path)
 
@@ -656,6 +653,18 @@ def fig_2_e_f_g(out_path="Figures\\Fig2"):
     neurons_idx_by_type = np.zeros((len(alphabetic_neuronal_names), 1)).astype(int)
     for j in range(len(alphabetic_neuronal_names)):
         neurons_idx_by_type[j] = alphabetic_neuronal_names.index(neuronal_names_ordered_by_type[j])
+    return neurons_idx_by_type
+
+
+def fig_2_e_f_g(out_path="Figures\\Fig2"):
+    np.random.seed(123456789)
+    num_types = 8
+    train_data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
+    with open(train_data_connectome_path, 'rb') as f:
+        train_data_connectome = pickle.load(f)
+    train_data_adj_mat = nx.to_numpy_array(train_data_connectome, nodelist=sorted(list(train_data_connectome.nodes)))
+
+    neurons_idx_by_type = _get_neurons_idx_by_inferred_type(num_types)
 
     train_data_adj_mat = train_data_adj_mat[neurons_idx_by_type, neurons_idx_by_type.T]
 
@@ -2067,20 +2076,72 @@ def fig_6_f(out_path="Figures\\Fig6\\f", saved_calcs_path="Figures\SavedCalcs", 
     plt.close()
 
 
-def fig_7_a(out_path="Figures\\Fig7\\a", saved_calcs_path="Figures\SavedCalcs", is_saved=False, do_save=True):
+def worms_overlap(out_path=os.path.join("Figures", "Fig7")):
+    def _plot_adj_mat(m, out_file_name=None):
+        data_cmap = colors.LinearSegmentedColormap.from_list('data', [(1, 1, 1), (0, 0, 0)])
+        pylab.rcParams['xtick.major.pad'] = '0.5'
+        pylab.rcParams['ytick.major.pad'] = '0.5'
+        axis_labelpad = 1
+        fig = plt.figure(figsize=SQUARE_FIG_SIZE)
+        ax = fig.add_axes([0.18, 0.18, 0.75, 0.75])
+
+        neurons_idx_by_type = _get_neurons_idx_by_inferred_type(num_types=8)
+
+        im = ax.imshow(m[neurons_idx_by_type, neurons_idx_by_type.T], cmap=data_cmap)
+        axis_ticks = range(0, 181, 60)
+        ax.set_xlabel("post-synaptic neuronal idx", fontsize=FONT_SIZE, labelpad=axis_labelpad)
+        ax.set_ylabel("pre-synaptic neuronal idx", fontsize=FONT_SIZE, labelpad=axis_labelpad)
+        ax.set_xticks(axis_ticks)
+        ax.set_xticklabels([str(i) for i in axis_ticks], fontsize=FONT_SIZE)
+        ax.set_yticks(axis_ticks)
+        ax.set_yticklabels([str(i) for i in axis_ticks], fontsize=FONT_SIZE)
+
+        if out_file_name is not None:
+            plt.savefig(os.path.join(out_path, out_file_name), format='pdf')
+        plt.show()
+
+    worm_7_path = os.path.join('.', "CElegansData", "InferredTypes", "connectomes", "8_types", "Dataset7.pkl")
+    with open(worm_7_path, 'rb') as f:
+        worm_7 = pickle.load(f)
+    worm_8_path = os.path.join('.', "CElegansData", "InferredTypes", "connectomes", "8_types", "Dataset8.pkl")
+    with open(worm_8_path, 'rb') as f:
+        worm_8 = pickle.load(f)
+    worm_atlas_path = os.path.join('.', 'CElegansData',
+                                   'worm_atlas_sub_connectome_chemical_no_autosynapses_subtypes.pkl')
+    with open(worm_atlas_path, 'rb') as f:
+        worm_atlas = pickle.load(f)
+
+    nerve_ring_neurons = sorted(list(worm_7.nodes()))
+
+    worm_7_adj_mat = nx.to_numpy_array(worm_7, nodelist=nerve_ring_neurons)
+    worm_8_adj_mat = nx.to_numpy_array(worm_8, nodelist=nerve_ring_neurons)
+    worm_atlas_adj_mat = nx.to_numpy_array(worm_atlas, nodelist=nerve_ring_neurons)
+
+    matrices_to_plot = [worm_8_adj_mat, worm_7_adj_mat * worm_8_adj_mat,
+                        worm_7_adj_mat * worm_8_adj_mat * worm_atlas_adj_mat]
+    file_names = ["worm_8.pdf", "mei_zhen_overlap.pdf", "backbone.pdf"]
+    for m, f in zip(matrices_to_plot, file_names):
+        _plot_adj_mat(m, out_file_name=f)
+
+
+def supplement_model_variance(out_path=os.path.join("Figures", "FigS_multi_epochs_across_splits_7", "a"),
+                              saved_calcs_path=os.path.join("Figures", "SavedCalcs"),
+                              is_saved=False, do_save=True):
     num_splits = 20
     data_ages = np.array(
         [FULL_DEVELOPMENTAL_AGES[stage] for stage in sorted(FULL_DEVELOPMENTAL_AGES.keys())])
     train_or_test = 'Test'
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
-              'rb') as f:
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_3_epochs.pkl"), 'rb') as f:
         max_like_params_multiple = pickle.load(f)
     if not is_saved:
         model_variance = np.zeros((num_splits, ADULT_WORM_AGE // 10))
         model_variance_std = np.zeros((num_splits, ADULT_WORM_AGE // 10))
-        for split in range(1, num_splits + 1):
+        for split in tqdm(range(1, num_splits + 1)):
             smi_multiple = max_like_params_multiple[f'split{split}']['S-']
-            model_test_dyads_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\{train_or_test}Set\\split{split}\\{smi_multiple:.5f}"
+            model_test_dyads_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                                 "ThreeDevStages", f"{train_or_test}Set", f"split{split}",
+                                                 f"{smi_multiple:.5f}")
             for dyads_file in os.listdir(model_test_dyads_path):
                 with open(os.path.join(model_test_dyads_path, dyads_file), 'rb') as f:
                     dyads_dist = pickle.load(f)
@@ -2089,34 +2150,47 @@ def fig_7_a(out_path="Figures\\Fig7\\a", saved_calcs_path="Figures\SavedCalcs", 
 
                 model_variance[split - 1, cur_idx], model_variance_std[
                     split - 1, cur_idx] = calc_reciprocal_dependence_model_variance_from_dyads_dist_str_keys(dyads_dist)
+
+        model_data_cross_variances = np.zeros((num_splits, len(FULL_DEVELOPMENTAL_AGES.keys())))
+        model_data_cross_variances_std = np.zeros((num_splits, len(FULL_DEVELOPMENTAL_AGES.keys())))
+        for split in tqdm(range(1, num_splits + 1)):
+            test_data_path = os.path.join(f"CElegansData", "InferredTypes", "synapses_lists", "8_types",
+                                          f"split{split}",
+                                          f"{train_or_test.lower()}")
+            smi_multiple = max_like_params_multiple[f'split{split}']['S-']
+            model_test_dyads_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                                 "ThreeDevStages", f"{train_or_test}Set", f"split{split}",
+                                                 f"{smi_multiple:.5f}")
+            for data_age in data_ages:
+                dataset_idx = list(data_ages).index(data_age) + 1
+                if dataset_idx == 7:
+                    dataset_idx = 8
+                with open(os.path.join(model_test_dyads_path, f'{data_age}.pkl'), 'rb') as f:
+                    dyads_dist = pickle.load(f)
+                model_data_cross_variances[split - 1, min(dataset_idx - 1, 6)], model_data_cross_variances_std[
+                    split - 1, min(dataset_idx - 1,
+                                   6)] = calc_reciprocal_dependence_model_data_cross_variance_from_dyads_dist_str_keys(
+                    dyads_dist, os.path.join(test_data_path, f"Dataset{dataset_idx}.pkl"))
+
     else:
         with open(os.path.join(saved_calcs_path, "variances_across_ages_and_splits.pkl"), 'rb') as f:
             model_variance = pickle.load(f)
         with open(os.path.join(saved_calcs_path, "variance_stds_across_ages_and_splits.pkl"), 'rb') as f:
             model_variance_std = pickle.load(f)
-
-    model_data_cross_variances = np.zeros((num_splits, len(FULL_DEVELOPMENTAL_AGES.keys())))
-    model_data_cross_variances_std = np.zeros((num_splits, len(FULL_DEVELOPMENTAL_AGES.keys())))
-    for split in range(1, num_splits + 1):
-        test_data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
-        smi_multiple = max_like_params_multiple[f'split{split}']['S-']
-        model_test_dyads_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{smi_multiple:.5f}"
-        for data_age in data_ages:
-            dataset_idx = list(data_ages).index(data_age) + 1
-            if dataset_idx == 7:
-                dataset_idx = 8
-            with open(os.path.join(model_test_dyads_path, f'{data_age}.pkl'), 'rb') as f:
-                dyads_dist = pickle.load(f)
-            model_data_cross_variances[split - 1, min(dataset_idx - 1, 6)], model_data_cross_variances_std[
-                split - 1, min(dataset_idx - 1,
-                               6)] = calc_reciprocal_dependence_model_data_cross_variance_from_dyads_dist_str_keys(
-                dyads_dist, os.path.join(test_data_path, f"Dataset{dataset_idx}.pkl"))
+        with open(os.path.join(saved_calcs_path, "model_data_cross_variances_across_splits.pkl"), 'rb') as f:
+            model_data_cross_variances = pickle.load(f)
+        with open(os.path.join(saved_calcs_path, "model_data_cross_variances_std_across_splits.pkl"), 'rb') as f:
+            model_data_cross_variances_std = pickle.load(f)
 
     if do_save:
         with open(os.path.join(saved_calcs_path, "variances_across_ages_and_splits.pkl"), 'wb') as f:
             pickle.dump(model_variance, f)
         with open(os.path.join(saved_calcs_path, "variance_stds_across_ages_and_splits.pkl"), 'wb') as f:
             pickle.dump(model_variance_std, f)
+        with open(os.path.join(saved_calcs_path, "model_data_cross_variances_across_splits.pkl"), 'wb') as f:
+            pickle.dump(model_data_cross_variances, f)
+        with open(os.path.join(saved_calcs_path, "model_data_cross_variances_std_across_splits.pkl"), 'wb') as f:
+            pickle.dump(model_data_cross_variances_std, f)
 
     fig_size = RECT_LARGE_FIG_SIZE
     fontsize = FONT_SIZE
@@ -2126,7 +2200,7 @@ def fig_7_a(out_path="Figures\\Fig7\\a", saved_calcs_path="Figures\SavedCalcs", 
     axes_labelpad = 1
     min_plotted_age = 300
     xticks = range(min_plotted_age, ADULT_WORM_AGE + 100, 800)
-    yticks = np.arange(0, 0.12, 0.02)
+    yticks = np.arange(0.88, 1.01, 0.02)
     multiple_pruning_color = adjust_lightness('lightcoral', 1.0)
 
     for split in range(1, num_splits + 1):
@@ -2141,16 +2215,17 @@ def fig_7_a(out_path="Figures\\Fig7\\a", saved_calcs_path="Figures\SavedCalcs", 
         ax1.set_yticks(yticks)
         ax1.set_yticklabels([f"{i:.2f}" for i in yticks], fontsize=fontsize)
         ax1.set_xlim(min_plotted_age - 50, ADULT_WORM_AGE + 100)
-        ax1.set_ylim(0, 0.11)
+        ax1.set_ylim(0.88, 1.01)
 
-        ax1.plot(ages, model_variance_to_plot, color=multiple_pruning_color, lw=line_width, label='model variance')
-        plt.fill_between(ages, y1=model_variance_to_plot + model_variance_std_to_plot,
-                         y2=np.clip(model_variance_to_plot - model_variance_std_to_plot, a_min=0, a_max=None),
+        ax1.plot(ages, 1 - model_variance_to_plot, color=multiple_pruning_color, lw=line_width, label='model variance')
+        plt.fill_between(ages, y1=np.clip(1 - model_variance_to_plot + model_variance_std_to_plot, a_min=None, a_max=1),
+                         y2=np.clip(1 - model_variance_to_plot - model_variance_std_to_plot, a_min=0, a_max=None),
                          color=multiple_pruning_color, alpha=0.3)
-        ax1.errorbar(data_ages, model_data_cross_variances[split - 1], yerr=model_data_cross_variances_std[split - 1],
+        ax1.errorbar(data_ages, 1 - model_data_cross_variances[split - 1],
+                     yerr=model_data_cross_variances_std[split - 1],
                      marker='o', ls='none', c='k', markersize=markersize * 1.5)
         ax1.set_xlabel('worm age [min.]', fontsize=fontsize, labelpad=axes_labelpad)
-        ax1.set_ylabel('normalized Hamming distance', fontsize=fontsize, labelpad=axes_labelpad)
+        ax1.set_ylabel('normalized Hamming similarity', fontsize=fontsize, labelpad=axes_labelpad)
         plt.savefig(os.path.join(out_path, f'model_variance_split{split}.pdf'), format='pdf')
         plt.show(block=False)
         plt.pause(3)
@@ -2167,24 +2242,24 @@ def fig_7_a(out_path="Figures\\Fig7\\a", saved_calcs_path="Figures\SavedCalcs", 
     ax1.set_yticks(yticks)
     ax1.set_yticklabels([f"{i:.2f}" for i in yticks], fontsize=fontsize)
     ax1.set_xlim(min_plotted_age - 50, ADULT_WORM_AGE + 100)
-    ax1.set_ylim(0, 0.11)
+    ax1.set_ylim(0.88, 1.01)
 
-    ax1.plot(ages, model_variance_to_plot, color=multiple_pruning_color, lw=line_width, label='model variance')
-    plt.fill_between(ages, y1=model_variance_to_plot + model_variance_std_to_plot,
-                     y2=np.clip(model_variance_to_plot - model_variance_std_to_plot, a_min=0, a_max=None),
+    ax1.plot(ages, 1 - model_variance_to_plot, color=multiple_pruning_color, lw=line_width, label='model variance')
+    plt.fill_between(ages, y1=np.clip(1 - model_variance_to_plot + model_variance_std_to_plot, a_min=None, a_max=1),
+                     y2=1 - model_variance_to_plot - model_variance_std_to_plot,
                      color=multiple_pruning_color, alpha=0.3)
-    ax1.errorbar(data_ages, model_data_cross_variances.mean(axis=0), yerr=model_data_cross_variances.std(axis=0),
+    ax1.errorbar(data_ages, 1 - model_data_cross_variances.mean(axis=0), yerr=model_data_cross_variances.std(axis=0),
                  marker='o', ls='none', c='k', markersize=markersize * 1.5,
                  label='model-train data cross variance training')
     ax1.set_xlabel('worm age [min.]', fontsize=fontsize, labelpad=axes_labelpad)
-    ax1.set_ylabel('normalized Hamming distance', fontsize=fontsize, labelpad=axes_labelpad)
+    ax1.set_ylabel('normalized Hamming similarity', fontsize=fontsize, labelpad=axes_labelpad)
     plt.savefig(os.path.join(out_path, f'average_model_variance_across_splits.pdf'), format='pdf')
     plt.show(block=False)
     plt.pause(3)
     plt.close()
 
 
-def fig_7_b(out_path="Figures\\Fig7\\b"):
+def supplement_model_probs_hist(out_path=os.path.join("Figures", "FigS_multi_epochs_across_splits_7", "b")):
     with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
@@ -2255,7 +2330,7 @@ def fig_7_b(out_path="Figures\\Fig7\\b"):
     plt.close()
 
 
-def fig_7_c(out_path="Figures\\Fig7\\c"):
+def prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "d")):
     worm_7_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
     with open(worm_7_path, 'rb') as f:
         worm_7 = pickle.load(f)
@@ -2431,7 +2506,7 @@ def fig_7_c(out_path="Figures\\Fig7\\c"):
     plt.close()
 
 
-def fig_7_d(out_path="Figures\\Fig7\\d"):
+def cum_prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "e")):
     worm_7_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
     with open(worm_7_path, 'rb') as f:
         worm_7 = pickle.load(f)
@@ -2582,6 +2657,143 @@ def fig_7_d(out_path="Figures\\Fig7\\d"):
     plt.show(block=False)
     plt.pause(3)
     plt.close()
+
+
+def _get_mean_weighted_conenctome():
+    worm_7_connectivity_df = pd.read_excel(os.path.join("CElegansData", "synapse_count_matrices.xlsx"),
+                                           sheet_name='Dataset7', index_col=2, skiprows=2)
+    worm_7_connectivity_df = worm_7_connectivity_df[1:]
+    worm_7_connectivity_df = worm_7_connectivity_df.iloc[:, 2:]
+
+    worm_8_connectivity_df = pd.read_excel(os.path.join("CElegansData", "synapse_count_matrices.xlsx"),
+                                           sheet_name='Dataset8', index_col=2, skiprows=2)
+    worm_8_connectivity_df = worm_8_connectivity_df[1:]
+    worm_8_connectivity_df = worm_8_connectivity_df.iloc[:, 2:]
+
+    with open(os.path.join("CElegansData", "nerve_ring_neurons_subset.pkl"), 'rb') as f:
+        nerve_ring_neurons = sorted(pickle.load(f))
+
+    num_neurons = len(nerve_ring_neurons)
+    worm_7_syn_count = np.zeros((num_neurons, num_neurons))
+    worm_8_syn_count = np.zeros((num_neurons, num_neurons))
+    for i, pre in enumerate(nerve_ring_neurons):
+        for j, post in enumerate(nerve_ring_neurons):
+            if pre == post:
+                continue
+            worm_7_syn_count[i, j] = worm_7_connectivity_df.loc[post, pre]
+            worm_8_syn_count[i, j] = worm_8_connectivity_df.loc[post, pre]
+    return (worm_7_syn_count + worm_8_syn_count) / 2
+
+
+def mean_weighted_connectivity_matrix(
+        out_path=os.path.join("Figures", "Fig7", "mean_weighted_connectivity_matrix.pdf")):
+    mean_weighed_connectome = _get_mean_weighted_conenctome()
+    neurons_idx_by_type = _get_neurons_idx_by_inferred_type(8)
+
+    axis_ticks = range(0, 181, 60)
+    fontsize = FONT_SIZE
+    main_axes = [0.18, 0.18, 0.65, 0.65]
+    colorbar_axes = [0.85, 0.18, 0.03, 0.65]
+    pylab.rcParams['xtick.major.pad'] = '0.5'
+    pylab.rcParams['ytick.major.pad'] = '0.5'
+    axis_labelpad = 1
+    colorbar_labelpad = -1
+    dy = 0.5
+    fig = plt.figure(figsize=SQUARE_FIG_SIZE)
+    ax = fig.add_axes(main_axes)
+    im = ax.imshow(mean_weighed_connectome[neurons_idx_by_type, neurons_idx_by_type.T], cmap="Grays")
+    ax.set_xlabel("post-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
+    ax.set_ylabel("pre-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
+    ax.set_xticks(axis_ticks)
+    ax.set_xticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax.set_yticks(axis_ticks)
+    ax.set_yticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    cbar_ax = fig.add_axes(colorbar_axes)
+    cbar3 = fig.colorbar(im, cax=cbar_ax, ticks=[0, 10, 20, 30])
+    cbar_ax.set_yticklabels(['0', '', '', '30'], fontsize=fontsize)
+    cbar3.set_label('# synapses', rotation=270, labelpad=colorbar_labelpad, y=dy, fontsize=fontsize)
+    fig.savefig(out_path, format='pdf')
+    plt.show()
+
+
+def prediction_vs_num_synapses_data(out_path=os.path.join("Figures", "Fig7", "prediction_vs_num_synapses.pdf")):
+    with open(os.path.join("CElegansData", "nerve_ring_neurons_subset.pkl"), 'rb') as f:
+        nerve_ring_neurons = sorted(pickle.load(f))
+
+    mean_weighted_connectome = _get_mean_weighted_conenctome()
+
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_3_epochs.pkl"), 'rb') as f:
+        max_like_params_multiple = pickle.load(f)
+    split_to_plot = 16
+    smi = max_like_params_multiple[f'split{split_to_plot}']['S-']
+    model_train_dyads_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                          "ThreeDevStages", "TrainSet", f"split{split_to_plot}", f"{smi:.5f}",
+                                          "3500.pkl")
+    with open(model_train_dyads_path, 'rb') as f:
+        model_train_dyads = pickle.load(f)
+    model_test_dyads_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                         "ThreeDevStages", "TestSet", f"split{split_to_plot}", f"{smi:.5f}", "3500.pkl")
+    with open(model_test_dyads_path, 'rb') as f:
+        model_test_dyads = pickle.load(f)
+    model_av_mat = calc_reciprocal_dependence_model_average_adj_mat_from_dyads_distributions_str_keys(
+        model_train_dyads, model_test_dyads, nerve_ring_neurons)
+
+    num_synapses_to_prob_dict = {}
+    for i, pre in enumerate(nerve_ring_neurons):
+        for j, post in enumerate(nerve_ring_neurons):
+            if pre == post:
+                continue
+            cur_num_synapses = mean_weighted_connectome[i, j]
+            if cur_num_synapses not in num_synapses_to_prob_dict.keys():
+                num_synapses_to_prob_dict[cur_num_synapses] = [model_av_mat[i, j]]
+            else:
+                num_synapses_to_prob_dict[cur_num_synapses].append(model_av_mat[i, j])
+
+    existing_num_synapses = sorted(list(num_synapses_to_prob_dict.keys()))
+    mean_probs = [np.array(num_synapses_to_prob_dict[i]).mean() for i in existing_num_synapses]
+    std_probs = [np.array(num_synapses_to_prob_dict[i]).std() for i in existing_num_synapses]
+
+    pylab.rcParams['xtick.major.pad'] = '0.5'
+    pylab.rcParams['ytick.major.pad'] = '0.5'
+    fig = plt.figure(figsize=(2 * SQUARE_FIG_SIZE[0], SQUARE_FIG_SIZE[1]))
+    ax = fig.add_subplot([0.11, 0.18, 0.73, 0.78])
+    xticks = [0, 20, 40]
+    yticks = [0.0, 0.5, 1.0]
+    markersize = MARKER_SIZE
+    axis_labelpad = -1
+    ax.set_xticks(xticks)
+    ax.set_xticklabels([str(i) for i in xticks], fontsize=FONT_SIZE)
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([f'{i:.1f}' for i in yticks], fontsize=FONT_SIZE)
+    ax.set_xlim([-1, 41])
+    ax.set_ylim([-0.06, 1.06])
+    ax.set_xlabel('# synapses', fontsize=FONT_SIZE, labelpad=axis_labelpad)
+    ax.set_ylabel('model prediction', fontsize=FONT_SIZE, labelpad=axis_labelpad)
+
+    num_synapses_freqs = [len(num_synapses_to_prob_dict[i]) for i in existing_num_synapses]
+    norm = colors.LogNorm(vmin=0.1 * min(num_synapses_freqs), vmax=max(num_synapses_freqs))
+    cs = plt.cm.gray_r(norm(num_synapses_freqs))
+    for xi, yi, yerri, ci in zip(existing_num_synapses, mean_probs, std_probs, cs):
+        ax.errorbar(xi, yi, yerr=yerri, fmt='o', color=ci, ecolor=ci, markersize=markersize / 2, elinewidth=0.75)
+
+    sm = plt.cm.ScalarMappable(cmap='gray_r', norm=norm)
+    sm.set_array([])  # Dummy array for colorbar scaling
+    cbar_ax = fig.add_axes([0.85, 0.18, 0.02, 0.78])
+    cbar = fig.colorbar(sm, cax=cbar_ax)
+    cbar_majorticks = np.logspace(0, 4, num=5)
+    cbar_ax.set_yticks(cbar_majorticks)
+    cbar_minorticks = []
+    for i in range(5):
+        cbar_minorticks += list(np.arange(2, 11) * 10 ** i)
+    cbar_ax.set_yticks(cbar_minorticks, minor=True)
+    cbar_ax.set_yticklabels([r"$10^{{{0:d}}}$".format(i) if i % 2 == 0 else '' for i in range(len(cbar_majorticks))],
+                            fontsize=FONT_SIZE)
+    cbar_ax.set_ylim(0, max(num_synapses_freqs))
+    cbar.set_label('# neuronal pairs', fontsize=FONT_SIZE)
+
+    fig.savefig(out_path, format="pdf")
+    plt.show()
 
 
 def supplement_noisy_birth_times(out_path="Figures\\FigS_noised_birth_times"):
@@ -3151,10 +3363,11 @@ if __name__ == "__main__":
     fig_6_e()
     fig_6_f()
 
-    fig_7_a()
-    fig_7_b()
-    fig_7_c()
-    fig_7_d()
+    worms_overlap()
+    prob_hist_by_num_datasets()
+    cum_prob_hist_by_num_datasets()
+    mean_weighted_connectivity_matrix()
+    prediction_vs_num_synapses_data()
 
     supplement_noisy_birth_times()
 
@@ -3165,3 +3378,6 @@ if __name__ == "__main__":
     supplement_reciprocity_reciprocal_model()
 
     supplement_spl_mats_across_dev()
+
+    supplement_model_variance()
+    supplement_model_probs_hist()

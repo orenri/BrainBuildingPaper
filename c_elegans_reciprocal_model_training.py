@@ -253,6 +253,27 @@ def calc_reciprocal_dependence_model_average_adj_mat_from_dyads_distributions(dy
     return average_adj_mat
 
 
+def calc_reciprocal_dependence_model_average_adj_mat_from_dyads_distributions_str_keys(
+        train_dyads_distributions, test_dyads_distributions, neuronal_names_list):
+    neuronal_names_list = sorted(neuronal_names_list)
+    num_neurons = len(neuronal_names_list)
+    average_adj_mat = np.zeros((num_neurons, num_neurons))
+    for i in range(num_neurons - 1):
+        for j in range(i + 1, num_neurons):
+            cur_dyad = (neuronal_names_list[i], neuronal_names_list[j])
+            if cur_dyad in train_dyads_distributions:
+                cur_dist = train_dyads_distributions
+            elif cur_dyad in test_dyads_distributions:
+                cur_dist = test_dyads_distributions
+            else:
+                raise ValueError(f"dyad {cur_dyad} not in train_dyads_distributions or test_dyads_distributions")
+            average_adj_mat[i, j] = cur_dist[cur_dyad][RECIPROCAL_DYAD_IDX] + cur_dist[cur_dyad][
+                ONLY_UPPER_TRIANGLE_SYNAPSE_IDX]
+            average_adj_mat[j, i] = cur_dist[cur_dyad][RECIPROCAL_DYAD_IDX] + cur_dist[cur_dyad][
+                ONLY_LOWER_TRIANGLE_SYNAPSE_IDX]
+    return average_adj_mat
+
+
 def calc_reciprocal_dependence_model_density_from_dyads_dist_index_keys(dyads_distributions, num_neurons):
     model_av_mat = calc_reciprocal_dependence_model_average_adj_mat_from_dyads_distributions(dyads_distributions,
                                                                                              num_neurons)
@@ -340,7 +361,7 @@ def calc_single_dyad_expected_flipped_synapses_with_given_dyadic_state(single_dy
         ONLY_UPPER_TRIANGLE_SYNAPSE_IDX]
     prob_for_0_flipped_synapses += single_dyad_distribution[ONLY_LOWER_TRIANGLE_SYNAPSE_IDX] * given_state[
         ONLY_LOWER_TRIANGLE_SYNAPSE_IDX]
-    prob_for_0_flipped_synapses += single_dyad_distribution[EMPTY_DYAD_IDX] * single_dyad_distribution[EMPTY_DYAD_IDX]
+    prob_for_0_flipped_synapses += single_dyad_distribution[EMPTY_DYAD_IDX] * given_state[EMPTY_DYAD_IDX]
 
     expected_num_flipped_synapses = prob_for_1_flipped_synapse + 2 * prob_for_2_flipped_synapses
     # E[X**2]-E[X]**2
@@ -383,7 +404,6 @@ def calc_reciprocal_dependence_model_data_cross_variance_from_dyads_dist_str_key
                 break
         if num_assigned < 2:
             raise ValueError("Invalid synapses list")
-            return
         if is_upper and is_lower:
             data_state[RECIPROCAL_DYAD_IDX] = 1
         elif is_upper and not is_lower:
