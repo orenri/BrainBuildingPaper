@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import scipy.stats
 from matplotlib import colors
 import matplotlib
 import pylab
@@ -2260,8 +2261,8 @@ def supplement_model_variance(out_path=os.path.join("Figures", "FigS_multi_epoch
 
 
 def supplement_model_probs_hist(out_path=os.path.join("Figures", "FigS_multi_epochs_across_splits_7", "b")):
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
-              'rb') as f:
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_3_epochs.pkl"), 'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
     bin_res = 0.05
@@ -2285,7 +2286,8 @@ def supplement_model_probs_hist(out_path=os.path.join("Figures", "FigS_multi_epo
 
     for split in range(1, num_splits + 1):
         smi = max_like_params_multiple[f'split{split}']['S-']
-        model_test_dyads_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\TestSet\\split{split}\\{smi:.5f}\\3500.pkl"
+        model_test_dyads_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                             "ThreeDevStages", "TestSet", f"split{split}", f"{smi:.5f}", "3500.pkl")
         with open(model_test_dyads_path, 'rb') as f:
             model_test_dyads = pickle.load(f)
         model_probs = construct_probs_array_from_dyads_dist_string_keys(model_test_dyads)
@@ -2302,7 +2304,7 @@ def supplement_model_probs_hist(out_path=os.path.join("Figures", "FigS_multi_epo
         ax.set_yticks(yticks)
         ax.set_yticklabels([r"$10^{{{0:d}}}$".format(i + lowest_exp) for i in range(len(yticks))], fontsize=fontsize)
         ax.yaxis.set_ticks(minorticks, minor=True)
-        ax.set_xlabel('synaptic probability', fontsize=fontsize, labelpad=axis_labelpad)
+        ax.set_xlabel('connection probability', fontsize=fontsize, labelpad=axis_labelpad)
         ax.set_ylabel('normalized frequency', fontsize=fontsize, labelpad=axis_labelpad)
         ax.bar(bin_middles, norm_hists[split - 1], align='center', width=bin_res, color='lightcoral')
         plt.savefig(os.path.join(out_path, f"model_probs_norm_hist_split{split}.pdf"), format='pdf')
@@ -2320,7 +2322,7 @@ def supplement_model_probs_hist(out_path=os.path.join("Figures", "FigS_multi_epo
     ax.set_yticks(yticks)
     ax.set_yticklabels([r"$10^{{{0:d}}}$".format(i + lowest_exp) for i in range(len(yticks))], fontsize=fontsize)
     ax.yaxis.set_ticks(minorticks, minor=True)
-    ax.set_xlabel('synaptic probability', fontsize=fontsize, labelpad=axis_labelpad)
+    ax.set_xlabel('connection probability', fontsize=fontsize, labelpad=axis_labelpad)
     ax.set_ylabel('normalized frequency', fontsize=fontsize, labelpad=axis_labelpad)
     ax.bar(bin_middles, norm_hists.mean(axis=0), yerr=[np.zeros(num_bins), norm_hists.std(axis=0)], align='center',
            width=bin_res, color='lightcoral', zorder=0)
@@ -2331,19 +2333,20 @@ def supplement_model_probs_hist(out_path=os.path.join("Figures", "FigS_multi_epo
 
 
 def prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "d")):
-    worm_7_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
+    worm_7_path = os.path.join('CElegansData', 'SubTypes', 'connectomes', 'Dataset7.pkl')
     with open(worm_7_path, 'rb') as f:
         worm_7 = pickle.load(f)
-    worm_8_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
+    worm_8_path = os.path.join('CElegansData', 'SubTypes', 'connectomes', 'Dataset8.pkl')
     with open(worm_8_path, 'rb') as f:
         worm_8 = pickle.load(f)
-    worm_atlas_path = 'CElegansData\\worm_atlas_sub_connectome_chemical_no_autosynapses_subtypes.pkl'
+    worm_atlas_path = os.path.join('CElegansData', 'worm_atlas_sub_connectome_chemical_no_autosynapses_subtypes.pkl')
     with open(worm_atlas_path, 'rb') as f:
         worm_atlas = pickle.load(f)
 
     data_sets_list = [worm_7, worm_8, worm_atlas]
 
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open(os.path.join('SavedOutputs', 'ReciprocalModel', 'DyadsSplit',
+                           'max_likelihood_params_per_split_3_epochs.pkl'),
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
@@ -2369,7 +2372,9 @@ def prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "d")):
 
     for split in range(1, num_splits + 1):
         smi = max_like_params_multiple[f'split{split}']['S-']
-        model_test_dyads_dists_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\{train_or_test}Set\\split{split}\\{smi:.5f}\\3500.pkl"
+        model_test_dyads_dists_path = os.path.join(f"SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                                                   "dyads_distributions", "ThreeDevStages", f"{train_or_test}Set",
+                                                   f"split{split}", f"{smi:.5f}", "3500.pkl")
         with open(model_test_dyads_dists_path, 'rb') as f:
             dyads_dists = pickle.load(f)
 
@@ -2437,7 +2442,7 @@ def prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "d")):
         ax0.set_ylabel('normalized frequency', fontsize=fontsize, labelpad=axis_labelpad,
                        y=-1.3)
         ax3.set_xticklabels([f'{tick:.1f}' for tick in x_axis_ticks], fontsize=fontsize)
-        ax3.set_xlabel('synaptic probability', fontsize=fontsize, labelpad=axis_labelpad)
+        ax3.set_xlabel('connection probability', fontsize=fontsize, labelpad=axis_labelpad)
 
         ax0.bar(bins_middles, hists_not_exist[split - 1], align='center', width=bin_res,
                 color='maroon')
@@ -2478,7 +2483,7 @@ def prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "d")):
     ax0.set_ylabel('normalized frequency', fontsize=fontsize, labelpad=axis_labelpad,
                    y=-1.3)
     ax3.set_xticklabels([f'{tick:.1f}' for tick in x_axis_ticks], fontsize=fontsize)
-    ax3.set_xlabel('synaptic probability', fontsize=fontsize, labelpad=axis_labelpad)
+    ax3.set_xlabel('connection probability', fontsize=fontsize, labelpad=axis_labelpad)
 
     ax0.bar(bins_middles, hists_not_exist.mean(axis=0),
             yerr=[np.zeros(bins_middles.shape), hists_not_exist.std(axis=0)], align='center', width=bin_res,
@@ -2507,19 +2512,20 @@ def prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "d")):
 
 
 def cum_prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "e")):
-    worm_7_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
+    worm_7_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset7.pkl")
     with open(worm_7_path, 'rb') as f:
         worm_7 = pickle.load(f)
-    worm_8_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
+    worm_8_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(worm_8_path, 'rb') as f:
         worm_8 = pickle.load(f)
-    worm_atlas_path = 'CElegansData\\worm_atlas_sub_connectome_chemical_no_autosynapses_subtypes.pkl'
+    worm_atlas_path = os.path.join('CElegansData', 'worm_atlas_sub_connectome_chemical_no_autosynapses_subtypes.pkl')
     with open(worm_atlas_path, 'rb') as f:
         worm_atlas = pickle.load(f)
 
     data_sets_list = [worm_7, worm_8, worm_atlas]
 
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_3_epochs.pkl"),
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
@@ -2544,7 +2550,9 @@ def cum_prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "e"))
 
     for split in range(1, num_splits + 1):
         smi = max_like_params_multiple[f'split{split}']['S-']
-        model_test_dyads_dists_path = f"SavedOutputs\\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\TestSet\\split{split}\\{smi:.5f}\\3500.pkl"
+        model_test_dyads_dists_path = os.path.join(f"SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                                                   "dyads_distributions", "ThreeDevStages", "TestSet", f"split{split}",
+                                                   f"{smi:.5f}", "3500.pkl")
         with open(model_test_dyads_dists_path, 'rb') as f:
             dyads_dists = pickle.load(f)
 
@@ -2588,7 +2596,7 @@ def cum_prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "e"))
         ax.set_xticklabels([f'{tick:.1f}' for tick in axes_ticks], fontsize=fontsize)
         ax.set_yticks(axes_ticks)
         ax.set_yticklabels([f'{tick:.1f}' for tick in axes_ticks], fontsize=fontsize)
-        ax.set_xlabel('synaptic probability', fontsize=fontsize, labelpad=axis_labelpad)
+        ax.set_xlabel('connection probability', fontsize=fontsize, labelpad=axis_labelpad)
         ax.set_ylabel('normalized cumulative frequency', fontsize=fontsize, labelpad=axis_labelpad)
         cur_hist = np.histogram(probs_not_exist, bins=bins)[0]
         cumulative_not_exist[split - 1] = np.cumsum(cur_hist) / len(probs_not_exist)
@@ -2624,7 +2632,7 @@ def cum_prob_hist_by_num_datasets(out_path=os.path.join("Figures", "Fig7", "e"))
     ax.set_xticklabels([f'{tick:.1f}' for tick in axes_ticks], fontsize=fontsize)
     ax.set_yticks(axes_ticks)
     ax.set_yticklabels([f'{tick:.1f}' for tick in axes_ticks], fontsize=fontsize)
-    ax.set_xlabel('synaptic probability', fontsize=fontsize, labelpad=axis_labelpad)
+    ax.set_xlabel('connection probability', fontsize=fontsize, labelpad=axis_labelpad)
     ax.set_ylabel('normalized cumulative frequency', fontsize=fontsize, labelpad=axis_labelpad)
     ax.plot(bins_middles, cumulative_not_exist.mean(axis=0), c='maroon', markersize=markersize, lw=line_width,
             label='exist in no data set')
@@ -2697,11 +2705,15 @@ def mean_weighted_connectivity_matrix(
     pylab.rcParams['xtick.major.pad'] = '0.5'
     pylab.rcParams['ytick.major.pad'] = '0.5'
     axis_labelpad = 1
-    colorbar_labelpad = -1
-    dy = 0.5
     fig = plt.figure(figsize=SQUARE_FIG_SIZE)
     ax = fig.add_axes(main_axes)
-    im = ax.imshow(mean_weighed_connectome[neurons_idx_by_type, neurons_idx_by_type.T], cmap="Grays")
+
+    boundaries = [0] + list(range(1, 22, 5)) + [mean_weighed_connectome.max()]
+    cs = plt.cm.Grays(np.linspace(0, 1, len(boundaries) - 1))
+    cmap = colors.ListedColormap(cs)
+    norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
+    im = plt.imshow(mean_weighed_connectome[neurons_idx_by_type, neurons_idx_by_type.T], cmap=cmap, norm=norm)
+
     ax.set_xlabel("post-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax.set_ylabel("pre-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax.set_xticks(axis_ticks)
@@ -2709,11 +2721,28 @@ def mean_weighted_connectivity_matrix(
     ax.set_yticks(axis_ticks)
     ax.set_yticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
     cbar_ax = fig.add_axes(colorbar_axes)
-    cbar3 = fig.colorbar(im, cax=cbar_ax, ticks=[0, 10, 20, 30])
-    cbar_ax.set_yticklabels(['0', '', '', '30'], fontsize=fontsize)
-    cbar3.set_label('# synapses', rotation=270, labelpad=colorbar_labelpad, y=dy, fontsize=fontsize)
+
+    cbar3 = fig.colorbar(im, cax=cbar_ax, ticks=boundaries)
+    cbar_ax.set_yticklabels([str(int(i)) for i in boundaries], fontsize=fontsize)
+
     fig.savefig(out_path, format='pdf')
     plt.show()
+
+
+def _get_tick_labels_from_num_syn_bins(num_synapses_bins_edges):
+    num_bins = len(num_synapses_bins_edges) - 1
+    xtick_labels = []
+    for i in range(num_bins):
+        if num_synapses_bins_edges[i + 1] == np.inf:
+            xtick_labels.append(f'{num_synapses_bins_edges[i]}+')
+        else:
+            next_rounded_bin_edge = int(np.ceil(num_synapses_bins_edges[i + 1]))
+            cur_rounded_bin_edge = int(np.ceil(num_synapses_bins_edges[i]))
+            if next_rounded_bin_edge - 1 == cur_rounded_bin_edge:
+                xtick_labels.append(f'{cur_rounded_bin_edge}')
+            else:
+                xtick_labels.append(f'{cur_rounded_bin_edge}-{next_rounded_bin_edge - 1}')
+    return xtick_labels
 
 
 def prediction_vs_num_synapses_data(out_path=os.path.join("Figures", "Fig7", "prediction_vs_num_synapses.pdf")):
@@ -2739,6 +2768,30 @@ def prediction_vs_num_synapses_data(out_path=os.path.join("Figures", "Fig7", "pr
     model_av_mat = calc_reciprocal_dependence_model_average_adj_mat_from_dyads_distributions_str_keys(
         model_train_dyads, model_test_dyads, nerve_ring_neurons)
 
+    r, p = scipy.stats.pearsonr(model_av_mat[~np.eye(len(nerve_ring_neurons), dtype=bool)].flatten(),
+                                mean_weighted_connectome[~np.eye(len(nerve_ring_neurons), dtype=bool)].flatten())
+    print(f"scipy's Pearson's correlation coefficient: {r}")
+    print(f"scipy's p-value: {p}, epsilon for floating point precision: {np.finfo(float).eps}")
+    if p == 0:
+        """
+        according to scipy, the p value is calculated as 
+        dist = scipy.stats.beta(n/2 - 1, n/2 - 1, loc=-1, scale=2)
+        p = 2*dist.cdf(-abs(r))
+        
+        So we will calculate the CDF of the shifted and scaled beta function with the same parameters using another 
+        package with higher precision.
+        """
+        import mpmath as mp
+        mp.dps = 1000
+        mp.mp.prec = 100000
+        # number of observations
+        n = len(nerve_ring_neurons) ** 2 - len(nerve_ring_neurons)
+        # shift per `loc=-1`, scale per `scale=2`
+        x = (-abs(r) + 1) / 2
+        # Compute the cumulative distribution function (CDF) at observed r, which is incomplete regularized beta
+        p = 2 * mp.betainc(n / 2 - 1, n / 2 - 1, 0, x, regularized=True)
+        print(f"Estimated log10 of p-value with high precision: {mp.nstr(mp.log(p, b=10), 2)}")
+
     num_synapses_to_prob_dict = {}
     for i, pre in enumerate(nerve_ring_neurons):
         for j, post in enumerate(nerve_ring_neurons):
@@ -2750,36 +2803,44 @@ def prediction_vs_num_synapses_data(out_path=os.path.join("Figures", "Fig7", "pr
             else:
                 num_synapses_to_prob_dict[cur_num_synapses].append(model_av_mat[i, j])
 
+    num_synapses_bins_edges = [0] + list(range(1, 22, 5)) + [np.inf]
+    num_bins = len(num_synapses_bins_edges) - 1
     existing_num_synapses = sorted(list(num_synapses_to_prob_dict.keys()))
-    mean_probs = [np.array(num_synapses_to_prob_dict[i]).mean() for i in existing_num_synapses]
-    std_probs = [np.array(num_synapses_to_prob_dict[i]).std() for i in existing_num_synapses]
+    bin_assignments = np.searchsorted(num_synapses_bins_edges, existing_num_synapses, side='right') - 1
+    probs_per_bin = {b: [] for b in range(num_bins)}
+    for bin_idx, num_syns in zip(bin_assignments, existing_num_synapses):
+        probs_per_bin[bin_idx] += num_synapses_to_prob_dict[num_syns]
+
+    mean_probs_per_bin = [np.array([probs_per_bin[i]]).mean() for i in range(num_bins)]
+    std_probs_per_bin = [np.array([probs_per_bin[i]]).std() for i in range(num_bins)]
 
     pylab.rcParams['xtick.major.pad'] = '0.5'
     pylab.rcParams['ytick.major.pad'] = '0.5'
     fig = plt.figure(figsize=(2 * SQUARE_FIG_SIZE[0], SQUARE_FIG_SIZE[1]))
-    ax = fig.add_subplot([0.11, 0.18, 0.73, 0.78])
-    xticks = [0, 20, 40]
+    ax = fig.add_subplot([0.11, 0.18, 0.73, 0.65])
+    xticks = list(range(num_bins))
     yticks = [0.0, 0.5, 1.0]
     markersize = MARKER_SIZE
-    axis_labelpad = -1
+    axis_labelpad = 0.75
     ax.set_xticks(xticks)
-    ax.set_xticklabels([str(i) for i in xticks], fontsize=FONT_SIZE)
+    xtick_labels = _get_tick_labels_from_num_syn_bins(num_synapses_bins_edges)
+    ax.set_xticklabels(xtick_labels, fontsize=FONT_SIZE)
     ax.set_yticks(yticks)
     ax.set_yticklabels([f'{i:.1f}' for i in yticks], fontsize=FONT_SIZE)
-    ax.set_xlim([-1, 41])
+    ax.set_xlim([-1, num_bins])
     ax.set_ylim([-0.06, 1.06])
     ax.set_xlabel('# synapses', fontsize=FONT_SIZE, labelpad=axis_labelpad)
     ax.set_ylabel('model prediction', fontsize=FONT_SIZE, labelpad=axis_labelpad)
 
-    num_synapses_freqs = [len(num_synapses_to_prob_dict[i]) for i in existing_num_synapses]
+    num_synapses_freqs = [len(probs_per_bin[i]) for i in range(num_bins)]
     norm = colors.LogNorm(vmin=0.1 * min(num_synapses_freqs), vmax=max(num_synapses_freqs))
-    cs = plt.cm.gray_r(norm(num_synapses_freqs))
-    for xi, yi, yerri, ci in zip(existing_num_synapses, mean_probs, std_probs, cs):
-        ax.errorbar(xi, yi, yerr=yerri, fmt='o', color=ci, ecolor=ci, markersize=markersize / 2, elinewidth=0.75)
+    cs = plt.cm.Blues(norm(num_synapses_freqs))
+    for xi, yi, yerri, ci, in zip(range(num_bins), mean_probs_per_bin, std_probs_per_bin, cs):
+        ax.errorbar(xi, yi, yerr=yerri, fmt='o', color=ci, ecolor=ci, markersize=4 * markersize, elinewidth=0.75)
 
-    sm = plt.cm.ScalarMappable(cmap='gray_r', norm=norm)
+    sm = plt.cm.ScalarMappable(cmap='Blues', norm=norm)
     sm.set_array([])  # Dummy array for colorbar scaling
-    cbar_ax = fig.add_axes([0.85, 0.18, 0.02, 0.78])
+    cbar_ax = fig.add_axes([0.85, 0.18, 0.02, 0.65])
     cbar = fig.colorbar(sm, cax=cbar_ax)
     cbar_majorticks = np.logspace(0, 4, num=5)
     cbar_ax.set_yticks(cbar_majorticks)
@@ -2789,10 +2850,10 @@ def prediction_vs_num_synapses_data(out_path=os.path.join("Figures", "Fig7", "pr
     cbar_ax.set_yticks(cbar_minorticks, minor=True)
     cbar_ax.set_yticklabels([r"$10^{{{0:d}}}$".format(i) if i % 2 == 0 else '' for i in range(len(cbar_majorticks))],
                             fontsize=FONT_SIZE)
-    cbar_ax.set_ylim(0, max(num_synapses_freqs))
+    cbar_ax.set_ylim(1, max(num_synapses_freqs))
     cbar.set_label('# neuronal pairs', fontsize=FONT_SIZE)
 
-    fig.savefig(out_path, format="pdf")
+    # fig.savefig(out_path, format="pdf")
     plt.show()
 
 
