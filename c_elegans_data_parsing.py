@@ -553,7 +553,7 @@ def convert_indices_of_types_between_neuronal_lists(types_by_indices_1_path, neu
 
 
 def create_cook_types_list(neurons_list_path):
-    with open('CElegansData\\neuronal_types_dict.pkl', 'rb') as f:
+    with open(os.path.join('CElegansData', 'neuronal_types_dict.pkl'), 'rb') as f:
         neuronal_types_dict = pickle.load(f)
     with open(neurons_list_path, 'rb') as f:
         neurons_list = pickle.load(f)

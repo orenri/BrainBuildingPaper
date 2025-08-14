@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import scipy.stats
-from matplotlib import colors
+from matplotlib import colors, cm
 import matplotlib
 import pylab
 import pickle
@@ -13,10 +13,9 @@ from tqdm import tqdm
 import pandas as pd
 
 from c_elegans_independent_model_training import sample_from_average_adj_mat, calc_model_adj_mat, \
-    convert_spls_dict_to_mat, calc_elongation_factor, average_matrix_log_likelihood
+    convert_spls_dict_to_mat, calc_elongation_factor, average_matrix_log_likelihood, calc_average_mats_across_dev
 from c_elegans_constants import ADULT_WORM_AGE, SINGLE_DEVELOPMENTAL_AGE, FULL_DEVELOPMENTAL_AGES, \
     WORM_LENGTH_NORMALIZATION, THREE_DEVELOPMENTAL_AGES
-from er_block_model import generate_er_block_per_type
 from CElegansNeuronsAdder import CElegansNeuronsAdder
 from wrap_cluster_runs import find_max_likelihood_distance_model, find_max_likelihood_full_model
 from graph_statistics import calc_reciprocity, calc_norm_triad_motifs_dist, NUM_TRIAD_TYPES, SORTED_TRIAD_TYPES, \
@@ -57,26 +56,22 @@ RECT_SMALL_FIG_SIZE = (5.467 * CM_TO_INCH, 2 / 3 * 5.467 * CM_TO_INCH)
 RECT_MEDIUM_FIG_SIZE = (5.467 * 1.5 * CM_TO_INCH, 5.467 * CM_TO_INCH)
 RECT_LARGE_FIG_SIZE = (7.2796 * CM_TO_INCH, 5.467 * CM_TO_INCH)
 
-TYPES_BASE_COLOR = np.array([204 / 255, 204 / 255, 204 / 255])
-BIRTH_TIMES_BASE_COLOR = np.array([1.0, 117 / 255, 117 / 255])
-DISTANCES_BASE_COLOR = np.array([127 / 255, 158 / 255, 215 / 255])
-FULL_MODEL_COLOR = (BIRTH_TIMES_BASE_COLOR + DISTANCES_BASE_COLOR) / 2
+FULL_MODEL_COLOR = "#2e3192"
 
-SINGLE_EPOCH_INFERRED_COLOR = adjust_lightness('b', 1.5)
+SINGLE_EPOCH_INFERRED_COLOR = 'skyblue'  # adjust_lightness('b', 1.5)
 
 NUM_MODEL_SAMPLES_FOR_STATISTICS = 1000
 
 INFERRED_TYPES_INDEX_TO_LABEL = {4: 'C0', 6: 'C1', 7: 'C2', 5: 'C3', 1: 'C4', 0: 'C5', 3: 'C6', 2: 'C7'}
 INFERRED_TYPES_LABEL_TO_INDEX = {'C0': 4, 'C1': 6, 'C2': 7, 'C3': 5, 'C4': 1, 'C5': 0, 'C6': 3, 'C7': 2}
 
-COOK_TYPES_COLOR = adjust_lightness('gray', 1.25)
 
-
-def fig_1_b(out_path="Figures\\Fig1"):
-    data_path = "CElegansData\SubTypes\connectomes\\Dataset7.pkl"
-    likelihoods_path = 'SavedOutputs\IndependentModel\likelihoods\SubTypes'
+def fig_1_c(out_path=os.path.join("Figures", "Fig1")):
+    data_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset7.pkl")
+    likelihoods_path = os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SubTypes")
     smi, beta, _ = find_max_likelihood_full_model(likelihoods_path)
-    spls_path = os.path.join("SavedOutputs\\IndependentModel\S+s\SubTypes", f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl")
+    spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "SubTypes",
+                             f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl")
     spls_mat, neuronal_types = convert_spls_dict_to_mat(spls_path, 0)
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
@@ -123,12 +118,12 @@ def fig_1_b(out_path="Figures\\Fig1"):
     ax.set_xticklabels(existing_types, fontsize=fontsize, rotation=270)
     ax.set_yticks(np.arange(len(existing_types)))
     ax.set_yticklabels(existing_types, fontsize=fontsize)
-    plt.savefig(os.path.join(out_path, '1_b.pdf'), format='pdf')
+    plt.savefig(os.path.join(out_path, '1_c.pdf'), format='pdf')
     plt.show()
 
 
-def fig_1_c(out_path="Figures\\Fig1"):
-    likelihoods_path = 'SavedOutputs\IndependentModel\likelihoods\SubTypes'
+def fig_1_d(out_path=os.path.join("Figures", "Fig1")):
+    likelihoods_path = os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SubTypes")
     _, beta, _ = find_max_likelihood_full_model(likelihoods_path)
     distances = np.arange(0, 1001, 1)
     decay = np.exp(-beta * calc_elongation_factor(ADULT_WORM_AGE) * distances / WORM_LENGTH_NORMALIZATION)
@@ -147,23 +142,23 @@ def fig_1_c(out_path="Figures\\Fig1"):
     ax1.set_xticklabels([f'{int(tick)}' if int(tick) not in [250, 750] else '' for tick in xticks], fontsize=fontsize)
     ax1.set_yticks(yticks)
     ax1.set_yticklabels(['0.5', '', '1.0'], fontsize=fontsize)
-    ax1.set_xlabel('distance between neurons [$\mu m$]', fontsize=fontsize, labelpad=axis_labelpad)
+    ax1.set_xlabel(r'distance between neurons [$\mu m$]', fontsize=fontsize, labelpad=axis_labelpad)
     ax1.set_ylabel('synaptic formation probability\ndecay factor', fontsize=fontsize, labelpad=axis_labelpad - 7)
     ax1.plot(distances, decay, color='g')
-    plt.savefig(os.path.join(out_path, "1_c.pdf"), format='pdf')
+    plt.savefig(os.path.join(out_path, "1_d.pdf"), format='pdf')
     plt.show()
 
 
-def fig_1_d_e_f(out_path="Figures\\Fig1"):
+def fig_1_b_e_f(out_path=os.path.join("Figures", "Fig1")):
     np.random.seed(123456789)
 
-    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
+    data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     alphabetic_neuronal_names = sorted(data_connectome.nodes)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=alphabetic_neuronal_names)
 
-    neurons_list_path = "CElegansData\\nerve_ring_neurons_subset.pkl"
+    neurons_list_path = os.path.join("CElegansData", "nerve_ring_neurons_subset.pkl")
     cook_types_list, _ = create_cook_types_list(neurons_list_path)
     neurons_names_by_type = []
     for n_type in cook_types_list:
@@ -175,9 +170,9 @@ def fig_1_d_e_f(out_path="Figures\\Fig1"):
 
     data_adj_mat = data_adj_mat[neurons_idx_by_type, neurons_idx_by_type.T]
 
-    likelihoods_path = 'SavedOutputs\IndependentModel\likelihoods\SubTypes'
+    likelihoods_path = os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SubTypes")
     smi, beta, _ = find_max_likelihood_full_model(likelihoods_path)
-    average_adj_mat_path = os.path.join("SavedOutputs\IndependentModel\\average_adj_mats\SubTypes",
+    average_adj_mat_path = os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "SubTypes",
                                         f"smi{smi:.5f}_beta{beta:.5f}_adult.pkl")
     with open(average_adj_mat_path, 'rb') as f:
         model_average_adj_mat = pickle.load(f)
@@ -187,10 +182,11 @@ def fig_1_d_e_f(out_path="Figures\\Fig1"):
     model_average_adj_mat = model_average_adj_mat[neurons_idx_by_type, neurons_idx_by_type.T]
     model_single_draw = model_single_draw[neurons_idx_by_type, neurons_idx_by_type.T]
 
-    axis_ticks = range(0, 181, 60)
+    padding = 1
+    axis_ticks = range(0 + padding, 181 + padding, 60)
     fontsize = FONT_SIZE
-    main_axes = [0.18, 0.18, 0.65, 0.65]
-    colorbar_axes = [0.85, 0.18, 0.03, 0.65]
+    main_axes = (0.18, 0.18, 0.65, 0.65)
+    colorbar_axes = (0.85, 0.18, 0.03, 0.65)
     pylab.rcParams['xtick.major.pad'] = '0.5'
     pylab.rcParams['ytick.major.pad'] = '0.5'
     axis_labelpad = 1
@@ -205,14 +201,14 @@ def fig_1_d_e_f(out_path="Figures\\Fig1"):
     x0, x1 = ax1.get_xlim()
     y0, y1 = ax1.get_ylim()
     ax1.set_aspect(abs(x1 - x0) / abs(y1 - y0), 'box')
-    im1 = ax1.imshow(data_adj_mat, cmap=data_cmap)
+    im1 = ax1.imshow(np.pad(data_adj_mat, padding), cmap=data_cmap, interpolation='none')
     ax1.set_xlabel("post-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax1.set_ylabel("pre-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax1.set_xticks(axis_ticks)
-    ax1.set_xticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax1.set_xticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     ax1.set_yticks(axis_ticks)
-    ax1.set_yticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
-    fig1.savefig(os.path.join(out_path, '1_d.pdf'), format='pdf')
+    ax1.set_yticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
+    fig1.savefig(os.path.join(out_path, '1_b.pdf'), format='pdf')
     plt.show()
 
     fig2 = plt.figure(2, figsize=SQUARE_FIG_SIZE)
@@ -220,13 +216,13 @@ def fig_1_d_e_f(out_path="Figures\\Fig1"):
     x0, x1 = ax2.get_xlim()
     y0, y1 = ax2.get_ylim()
     ax2.set_aspect(abs(x1 - x0) / abs(y1 - y0), 'box')
-    im2 = ax2.imshow(model_single_draw, cmap=model_cmap)
+    im2 = ax2.imshow(np.pad(model_single_draw, padding), cmap=model_cmap, interpolation='none')
     ax2.set_xlabel("post-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax2.set_ylabel("pre-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax2.set_xticks(axis_ticks)
-    ax2.set_xticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax2.set_xticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     ax2.set_yticks(axis_ticks)
-    ax2.set_yticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax2.set_yticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     fig2.savefig(os.path.join(out_path, '1_e.pdf'), format='pdf')
     plt.show()
 
@@ -235,40 +231,42 @@ def fig_1_d_e_f(out_path="Figures\\Fig1"):
     x0, x1 = ax3.get_xlim()
     y0, y1 = ax3.get_ylim()
     ax3.set_aspect(abs(x1 - x0) / abs(y1 - y0), 'box')
-    im3 = ax3.imshow(model_average_adj_mat, cmap=model_cmap)
+    im3 = ax3.imshow(np.pad(model_average_adj_mat, padding), cmap=model_cmap, interpolation='none')
     ax3.set_xlabel("post-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax3.set_ylabel("pre-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax3.set_xticks(axis_ticks)
-    ax3.set_xticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax3.set_xticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     ax3.set_yticks(axis_ticks)
-    ax3.set_yticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax3.set_yticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     cbar_ax = fig3.add_axes(colorbar_axes)
-    cbar3 = fig3.colorbar(im3, cax=cbar_ax,
-                          ticks=[0, 0.6 / 4, 3 * 0.6 / 4,
-                                 0.6])
-    cbar_ax.set_yticklabels(
-        ['0', '', '', '0.6'],
-        fontsize=fontsize)
+    cbar3 = fig3.colorbar(im3, cax=cbar_ax, ticks=[0, 0.6 / 4, 3 * 0.6 / 4, 0.6])
+    cbar_ax.set_yticklabels(['0', '', '', '0.6'], fontsize=fontsize)
     cbar3.set_label('probability', rotation=270, labelpad=colorbar_labelpad, y=dy, fontsize=fontsize)
     fig3.savefig(os.path.join(out_path, '1_f.pdf'), format='pdf')
     plt.show()
 
 
-def fig_1_g(out_path="Figures\\Fig1"):
-    data_connectome_path = 'CElegansData\SubTypes\connectomes\Dataset8.pkl'
+def _remove_main_diag_flatten(mat):
+    return mat[~np.eye(mat.shape[0], dtype=bool)].flatten()
+
+
+def fig_1_g(out_path=os.path.join("Figures", "Fig1")):
+    data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
     data_adj_mat = data_adj_mat.astype(int)
 
-    likelihoods_path = 'SavedOutputs\IndependentModel\likelihoods\SubTypes'
+    likelihoods_path = os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SubTypes")
     smi, beta, _ = find_max_likelihood_full_model(likelihoods_path)
-    model_average_adj_mat_path = f"SavedOutputs\IndependentModel\\average_adj_mats\SubTypes\\smi{smi:.5f}_beta{beta:.5f}_adult.pkl"
+    model_average_adj_mat_path = os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "SubTypes",
+                                              f"smi{smi:.5f}_beta{beta:.5f}_adult.pkl")
     with open(model_average_adj_mat_path, 'rb') as f:
         model_average_adj_mat = pickle.load(f)
 
-    false_positive_rate, true_positive_rate, _ = roc_curve(data_adj_mat.flatten(), model_average_adj_mat.flatten())
-    auc = roc_auc_score(data_adj_mat.flatten(), model_average_adj_mat.flatten())
+    false_positive_rate, true_positive_rate, _ = roc_curve(_remove_main_diag_flatten(data_adj_mat),
+                                                           _remove_main_diag_flatten(model_average_adj_mat))
+    auc = roc_auc_score(_remove_main_diag_flatten(data_adj_mat), _remove_main_diag_flatten(model_average_adj_mat))
 
     fig = plt.figure(figsize=SQUARE_FIG_SIZE)
     fontsize = FONT_SIZE
@@ -291,7 +289,6 @@ def fig_1_g(out_path="Figures\\Fig1"):
     ax1.set_ylabel('True Positive Rate', fontsize=fontsize, labelpad=axis_labelpad)
 
     single_color = FULL_MODEL_COLOR
-
     ax1.plot(false_positive_rate,
              true_positive_rate, marker='.', label=f"AUC={auc:.2f}", c=single_color,
              markersize=markersize, lw=line_width)
@@ -299,77 +296,56 @@ def fig_1_g(out_path="Figures\\Fig1"):
     plt.show()
 
 
-def fig_2_b(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\average_mats", is_saved=False,
+def fig_2_b(out_path=os.path.join("Figures", "Fig2"),
+            saved_calcs_path=os.path.join("Figures", "SavedCalcs", "average_mats"), is_saved=False,
             do_save=True):
-    data_connectome_path = 'CElegansData\SubTypes\connectomes\Dataset8.pkl'
+    data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
     data_adj_mat = data_adj_mat.astype(int)
 
     if not is_saved:
-        _, types_single_average_mat = generate_er_block_per_type(CElegansNeuronsAdder.SINGLE_TYPE,
-                                                                 'SingleType\connectomes\Dataset7.pkl',
-                                                                 'CElegansData\\nerve_ring_neurons_subset.pkl')
-
         birth_times_beta = 0
         smi_single_types_birth_times, _, _ = find_max_likelihood_full_model(
-            "SavedOutputs\IndependentModel\likelihoods\SingleType",
+            os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SingleType"),
             beta_value=birth_times_beta)
-        birth_times_single_type_spls_path = f"SavedOutputs\IndependentModel\S+s\SingleType\\spls_smi{smi_single_types_birth_times:.5f}_beta{birth_times_beta:.5f}.pkl"
+        birth_times_single_type_spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "SingleType",
+                                                         f"spls_smi{smi_single_types_birth_times:.5f}_beta{birth_times_beta:.5f}.pkl")
         with open(birth_times_single_type_spls_path, 'rb') as f:
             birth_times_single_type_spls = pickle.load(f)
         birth_times_single_type_average_mat = calc_model_adj_mat(birth_times_single_type_spls,
                                                                  smi_single_types_birth_times,
                                                                  birth_times_beta, ADULT_WORM_AGE,
                                                                  SINGLE_DEVELOPMENTAL_AGE,
-                                                                 'CElegansData\SingleType\connectomes\Dataset7.pkl')
-
-        smi_single_type_full, beta_single_type_full, _ = find_max_likelihood_full_model(
-            "SavedOutputs\IndependentModel\likelihoods\SingleType")
-        full_single_type_spls_path = f"SavedOutputs\IndependentModel\S+s\SingleType\\spls_smi{smi_single_type_full:.5f}_beta{beta_single_type_full:.5f}.pkl"
-        with open(full_single_type_spls_path, 'rb') as f:
-            full_single_type_spls = pickle.load(f)
-        full_single_type_average_mat = calc_model_adj_mat(full_single_type_spls, smi_single_type_full,
-                                                          beta_single_type_full, ADULT_WORM_AGE,
-                                                          SINGLE_DEVELOPMENTAL_AGE,
-                                                          'CElegansData\SingleType\\connectomes\Dataset7.pkl')
-
+                                                                 os.path.join("CElegansData", "SingleType",
+                                                                              "connectomes", "Dataset7.pkl"))
         if do_save:
-            with open(os.path.join(saved_calcs_path, 'types_1_types_average.pkl'), 'wb') as f:
-                pickle.dump(types_single_average_mat, f)
-
             with open(os.path.join(saved_calcs_path, "birth_times_1_types_average.pkl"), 'wb') as f:
                 pickle.dump(birth_times_single_type_average_mat, f)
 
-            with open(os.path.join(saved_calcs_path, 'full_1_types_average.pkl'), 'wb') as f:
-                pickle.dump(full_single_type_average_mat, f)
     else:
-        with open(os.path.join(saved_calcs_path, 'types_1_types_average.pkl'), 'rb') as f:
-            types_single_average_mat = pickle.load(f)
-
         with open(os.path.join(saved_calcs_path, "birth_times_1_types_average.pkl"), 'rb') as f:
             birth_times_single_type_average_mat = pickle.load(f)
 
-        with open(os.path.join(saved_calcs_path, 'full_1_types_average.pkl'), 'rb') as f:
-            full_single_type_average_mat = pickle.load(f)
-
-    types_single_false_positive, types_single_true_positive, _ = roc_curve(data_adj_mat.flatten(),
-                                                                           types_single_average_mat.flatten())
-
     beta_single_type_distances, _ = find_max_likelihood_distance_model(
-        "SavedOutputs\DistancesModel\likelihoods\SingleType")
-    single_type_distances_average_mat_path = f"SavedOutputs\DistancesModel\\average_adj_mats\SingleType\\{beta_single_type_distances:.3f}_average_adj_mat.pkl"
+        os.path.join("SavedOutputs", "DistancesModel", "likelihoods", "SingleType"))
+    single_type_distances_average_mat_path = os.path.join("SavedOutputs", "DistancesModel", "average_adj_mats",
+                                                          "SingleType",
+                                                          f"{beta_single_type_distances:.3f}_average_adj_mat.pkl")
     with open(single_type_distances_average_mat_path, 'rb') as f:
         single_type_distances_average_mat = pickle.load(f)
-    distance_single_false_positive, distance_single_true_positive, _ = roc_curve(data_adj_mat.flatten(),
-                                                                                 single_type_distances_average_mat.flatten())
+    distance_single_false_positive, distance_single_true_positive, _ = roc_curve(
+        _remove_main_diag_flatten(data_adj_mat),
+        _remove_main_diag_flatten(single_type_distances_average_mat))
+    print(f"distance auc: {roc_auc_score(
+        _remove_main_diag_flatten(data_adj_mat), _remove_main_diag_flatten(single_type_distances_average_mat))}")
 
-    birth_times_single_false_positive, birth_times_single_true_positive, _ = roc_curve(data_adj_mat.flatten(),
-                                                                                       birth_times_single_type_average_mat.flatten())
-
-    full_single_false_positive, full_single_true_positive, _ = roc_curve(data_adj_mat.flatten(),
-                                                                         full_single_type_average_mat.flatten())
+    birth_times_single_false_positive, birth_times_single_true_positive, _ = roc_curve(
+        _remove_main_diag_flatten(data_adj_mat),
+        _remove_main_diag_flatten(birth_times_single_type_average_mat))
+    print(f"birth time auc: {roc_auc_score(
+        _remove_main_diag_flatten(data_adj_mat), _remove_main_diag_flatten(birth_times_single_type_average_mat))}")
 
     fontsize = FONT_SIZE
     markersize = MARKER_SIZE
@@ -388,11 +364,11 @@ def fig_2_b(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
     ax1.set_xlabel('False Positive Rate', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel('True Positive Rate', fontsize=fontsize, labelpad=axes_labelpad)
 
-    birth_times_single_color = BIRTH_TIMES_BASE_COLOR
+    birth_times_single_color = 'darkorange'
     ax1.plot(birth_times_single_false_positive, birth_times_single_true_positive, marker='.',
-             color=tuple(birth_times_single_color),
+             color=birth_times_single_color,
              lw=line_width, markersize=markersize)
-    distance_single_color = 'indigo'
+    distance_single_color = 'saddlebrown'
     ax1.plot(distance_single_false_positive, distance_single_true_positive, marker='.',
              color=distance_single_color,
              lw=line_width, markersize=markersize)
@@ -400,9 +376,10 @@ def fig_2_b(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
     plt.show()
 
 
-def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\average_mats", is_saved=False,
+def fig_2_c(out_path=os.path.join("Figures", "Fig2"),
+            saved_calcs_path=os.path.join("Figures", "SavedCalcs", "average_mats"), is_saved=False,
             do_save=True):
-    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
+    data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
@@ -410,34 +387,40 @@ def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
 
     if not is_saved:
         smi_single_type_full, beta_single_type_full, _ = find_max_likelihood_full_model(
-            "SavedOutputs\IndependentModel\likelihoods\SingleType")
-        full_single_type_spls_path = f"SavedOutputs\IndependentModel\S+s\SingleType\\spls_smi{smi_single_type_full:.5f}_beta{beta_single_type_full:.5f}.pkl"
+            os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SingleType"))
+        full_single_type_spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "SingleType",
+                                                  f"spls_smi{smi_single_type_full:.5f}_beta{beta_single_type_full:.5f}.pkl")
         with open(full_single_type_spls_path, 'rb') as f:
             full_single_type_spls = pickle.load(f)
         full_single_type_average_mat = calc_model_adj_mat(full_single_type_spls, smi_single_type_full,
                                                           beta_single_type_full, ADULT_WORM_AGE,
                                                           SINGLE_DEVELOPMENTAL_AGE,
-                                                          'CElegansData\SingleType\\connectomes\Dataset7.pkl')
+                                                          os.path.join(
+                                                              'CElegansData", "SingleType", "connectomes", "Dataset7.pkl'))
 
         smi_coarse_types_full, beta_coarse_types_full, _ = find_max_likelihood_full_model(
-            "SavedOutputs\IndependentModel\likelihoods\CoarseTypes")
-        full_coarse_types_spls_path = f"SavedOutputs\IndependentModel\S+s\CoarseTypes\\spls_smi{smi_coarse_types_full:.5f}_beta{beta_coarse_types_full:.5f}.pkl"
+            os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "CoarseTypes"))
+        full_coarse_types_spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "CoarseTypes",
+                                                   f"spls_smi{smi_coarse_types_full:.5f}_beta{beta_coarse_types_full:.5f}.pkl")
         with open(full_coarse_types_spls_path, 'rb') as f:
             full_coarse_types_spls = pickle.load(f)
         full_coarse_types_average_mat = calc_model_adj_mat(full_coarse_types_spls, smi_coarse_types_full,
                                                            beta_coarse_types_full, ADULT_WORM_AGE,
                                                            SINGLE_DEVELOPMENTAL_AGE,
-                                                           'CElegansData\CoarseTypes\\connectomes\Dataset7.pkl')
+                                                           os.path.join("CElegansData", "CoarseTypes", "connectomes",
+                                                                        "Dataset7.pkl"))
 
         smi_sub_types_full, beta_sub_types_full, _ = find_max_likelihood_full_model(
-            "SavedOutputs\IndependentModel\likelihoods\SubTypes")
-        full_sub_types_spls_path = f"SavedOutputs\IndependentModel\S+s\SubTypes\\spls_smi{smi_sub_types_full:.5f}_beta{beta_sub_types_full:.5f}.pkl"
+            os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SubTypes"))
+        full_sub_types_spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "SubTypes",
+                                                f"spls_smi{smi_sub_types_full:.5f}_beta{beta_sub_types_full:.5f}.pkl")
         with open(full_sub_types_spls_path, 'rb') as f:
             full_sub_types_spls = pickle.load(f)
         full_sub_types_average_mat = calc_model_adj_mat(full_sub_types_spls, smi_sub_types_full,
                                                         beta_sub_types_full, ADULT_WORM_AGE,
                                                         SINGLE_DEVELOPMENTAL_AGE,
-                                                        'CElegansData\SubTypes\\connectomes\Dataset7.pkl')
+                                                        os.path.join("CElegansData", "SubTypes", "connectomes",
+                                                                     "Dataset7.pkl"))
         if do_save:
             with open(os.path.join(saved_calcs_path, 'full_1_types_average.pkl'), 'wb') as f:
                 pickle.dump(full_single_type_average_mat, f)
@@ -453,14 +436,26 @@ def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
         with open(os.path.join(saved_calcs_path, "full_sub_types_average.pkl"), 'rb') as f:
             full_sub_types_average_mat = pickle.load(f)
 
-    full_single_false_positive, full_single_true_positive, _ = roc_curve(data_adj_mat.flatten(),
-                                                                         full_single_type_average_mat.flatten())
+    full_single_false_positive, full_single_true_positive, _ = roc_curve(_remove_main_diag_flatten(data_adj_mat),
+                                                                         _remove_main_diag_flatten(
+                                                                             full_single_type_average_mat))
+    print(f"1 type auc: {roc_auc_score(
+        _remove_main_diag_flatten(data_adj_mat), _remove_main_diag_flatten(full_single_type_average_mat)
+    )}")
 
-    full_coarse_false_positive, full_coarse_true_positive, _ = roc_curve(data_adj_mat.flatten(),
-                                                                         full_coarse_types_average_mat.flatten())
+    full_coarse_false_positive, full_coarse_true_positive, _ = roc_curve(_remove_main_diag_flatten(data_adj_mat),
+                                                                         _remove_main_diag_flatten(
+                                                                             full_coarse_types_average_mat))
+    print(f"3 types auc: {roc_auc_score(
+        _remove_main_diag_flatten(data_adj_mat), _remove_main_diag_flatten(full_coarse_types_average_mat)
+    )}")
 
-    full_sub_false_positive, full_sub_true_positive, _ = roc_curve(data_adj_mat.flatten(),
-                                                                   full_sub_types_average_mat.flatten())
+    full_sub_false_positive, full_sub_true_positive, _ = roc_curve(_remove_main_diag_flatten(data_adj_mat),
+                                                                   _remove_main_diag_flatten(
+                                                                       full_sub_types_average_mat))
+    print(f"13 types auc: {roc_auc_score(
+        _remove_main_diag_flatten(data_adj_mat), _remove_main_diag_flatten(full_sub_types_average_mat)
+    )}")
 
     fontsize = FONT_SIZE
     markersize = MARKER_SIZE
@@ -479,14 +474,14 @@ def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
     ax1.set_xlabel('False Positive Rate', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel('True Positive Rate', fontsize=fontsize, labelpad=axes_labelpad)
 
-    full_single_color = adjust_lightness((BIRTH_TIMES_BASE_COLOR + DISTANCES_BASE_COLOR) / 2, 1.3)
+    full_single_color = adjust_lightness(FULL_MODEL_COLOR, 2.0)
     ax1.plot(full_single_false_positive, full_single_true_positive, marker='.', color=tuple(full_single_color),
              lw=line_width, markersize=markersize)
 
-    full_coarse_color = adjust_lightness((BIRTH_TIMES_BASE_COLOR + DISTANCES_BASE_COLOR) / 2, 1.0)
+    full_coarse_color = adjust_lightness(FULL_MODEL_COLOR, 1.5)
     ax1.plot(full_coarse_false_positive, full_coarse_true_positive, marker='.', color=tuple(full_coarse_color),
              lw=line_width, markersize=markersize)
-    full_sub_color = adjust_lightness((BIRTH_TIMES_BASE_COLOR + DISTANCES_BASE_COLOR) / 2, 0.7)
+    full_sub_color = adjust_lightness(FULL_MODEL_COLOR, 1.0)
     ax1.plot(full_sub_false_positive, full_sub_true_positive, marker='.', color=tuple(full_sub_color), lw=line_width,
              markersize=markersize)
 
@@ -494,9 +489,10 @@ def fig_2_c(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
     plt.show()
 
 
-def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\average_mats", is_saved=False,
+def fig_2_g(out_path=os.path.join("Figures", "Fig2"),
+            saved_calcs_path=os.path.join("Figures", "SavedCalcs", "average_mats"), is_saved=False,
             do_save=True):
-    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
+    data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
@@ -506,59 +502,69 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
 
     if not is_saved:
         smi_single_type_full, beta_single_type_full, _ = find_max_likelihood_full_model(
-            "SavedOutputs\IndependentModel\likelihoods\SingleType")
-        full_single_type_spls_path = f"SavedOutputs\IndependentModel\S+s\SingleType\\spls_smi{smi_single_type_full:.5f}_beta{beta_single_type_full:.5f}.pkl"
+            os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SingleType"))
+        full_single_type_spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "SingleType",
+                                                  f"spls_smi{smi_single_type_full:.5f}_beta{beta_single_type_full:.5f}.pkl")
         with open(full_single_type_spls_path, 'rb') as f:
             full_single_type_spls = pickle.load(f)
         full_single_type_average_mat = calc_model_adj_mat(full_single_type_spls, smi_single_type_full,
                                                           beta_single_type_full, ADULT_WORM_AGE,
                                                           SINGLE_DEVELOPMENTAL_AGE,
-                                                          'CElegansData\SingleType\\connectomes\Dataset7.pkl')
+                                                          os.path.join("CElegansData", "SingleType", "connectomes",
+                                                                       "Dataset7.pkl"))
 
         smi_coarse_types_full, beta_coarse_types_full, _ = find_max_likelihood_full_model(
-            "SavedOutputs\IndependentModel\likelihoods\CoarseTypes")
-        full_coarse_types_spls_path = f"SavedOutputs\IndependentModel\S+s\CoarseTypes\\spls_smi{smi_coarse_types_full:.5f}_beta{beta_coarse_types_full:.5f}.pkl"
+            os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "CoarseTypes"))
+        full_coarse_types_spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "CoarseTypes",
+                                                   f"spls_smi{smi_coarse_types_full:.5f}_beta{beta_coarse_types_full:.5f}.pkl")
         with open(full_coarse_types_spls_path, 'rb') as f:
             full_coarse_types_spls = pickle.load(f)
         full_coarse_types_average_mat = calc_model_adj_mat(full_coarse_types_spls, smi_coarse_types_full,
                                                            beta_coarse_types_full, ADULT_WORM_AGE,
                                                            SINGLE_DEVELOPMENTAL_AGE,
-                                                           'CElegansData\CoarseTypes\\connectomes\Dataset7.pkl')
+                                                           os.path.join("CElegansData", "CoarseTypes", "connectomes",
+                                                                        "Dataset7.pkl"))
 
         smi_sub_types_full, beta_sub_types_full, _ = find_max_likelihood_full_model(
-            "SavedOutputs\IndependentModel\likelihoods\SubTypes")
-        full_sub_types_spls_path = f"SavedOutputs\IndependentModel\S+s\SubTypes\\spls_smi{smi_sub_types_full:.5f}_beta{beta_sub_types_full:.5f}.pkl"
+            os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SubTypes"))
+        full_sub_types_spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "SubTypes",
+                                                f"spls_smi{smi_sub_types_full:.5f}_beta{beta_sub_types_full:.5f}.pkl")
         with open(full_sub_types_spls_path, 'rb') as f:
             full_sub_types_spls = pickle.load(f)
         full_sub_types_average_mat = calc_model_adj_mat(full_sub_types_spls, smi_sub_types_full,
                                                         beta_sub_types_full, ADULT_WORM_AGE,
                                                         SINGLE_DEVELOPMENTAL_AGE,
-                                                        'CElegansData\SubTypes\\connectomes\Dataset7.pkl')
+                                                        os.path.join("CElegansData", "SubTypes", "connectomes",
+                                                                     "Dataset7.pkl"))
 
         average_mats_inferred_types = []
         for num_types in num_types_range:
             smi_full, beta_full, _ = find_max_likelihood_full_model(
-                f"SavedOutputs\IndependentModel\likelihoods\InferredTypes\\{num_types}_types")
-            full_spls_path = f"SavedOutputs\IndependentModel\S+s\InferredTypes\\{num_types}_types\\spls_smi{smi_full:.5f}_beta{beta_full:.5f}.pkl"
+                os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "InferredTypes", f"{num_types}_types"))
+            full_spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "InferredTypes",
+                                          f"{num_types}_types", f"spls_smi{smi_full:.5f}_beta{beta_full:.5f}.pkl")
             with open(full_spls_path, 'rb') as f:
                 full_spls = pickle.load(f)
             full_average_mat = calc_model_adj_mat(full_spls, smi_full,
                                                   beta_full, ADULT_WORM_AGE,
                                                   SINGLE_DEVELOPMENTAL_AGE,
-                                                  f'CElegansData\InferredTypes\\connectomes\\{num_types}_types\Dataset7.pkl')
+                                                  os.path.join("CElegansData", "InferredTypes", "connectomes",
+                                                               f"{num_types}_types", "Dataset7.pkl"))
             average_mats_inferred_types.append(full_average_mat)
 
         average_mats_random_types = []
         for num_types in num_types_range:
             smi_full, beta_full, _ = find_max_likelihood_full_model(
-                f"SavedOutputs\IndependentModel\likelihoods\RandomTypes\\{num_types}_types")
-            full_spls_path = f"SavedOutputs\IndependentModel\S+s\RandomTypes\\{num_types}_types\\spls_smi{smi_full:.5f}_beta{beta_full:.5f}.pkl"
+                os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "RandomTypes", f"{num_types}_types"))
+            full_spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "RandomTypes",
+                                          f"{num_types}_types", f"spls_smi{smi_full:.5f}_beta{beta_full:.5f}.pkl")
             with open(full_spls_path, 'rb') as f:
                 full_spls = pickle.load(f)
             full_average_mat = calc_model_adj_mat(full_spls, smi_full,
                                                   beta_full, ADULT_WORM_AGE,
                                                   SINGLE_DEVELOPMENTAL_AGE,
-                                                  f'CElegansData\RandomTypes\\connectomes\\{num_types}_types\Dataset7.pkl')
+                                                  os.path.join("CElegansData", "RandomTypes", "connectomes",
+                                                               f"{num_types}_types", "Dataset7.pkl"))
             average_mats_random_types.append(full_average_mat)
 
         if do_save:
@@ -590,26 +596,29 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
             with open(os.path.join(saved_calcs_path, f'full_{num_types}_random_types_average.pkl'), 'rb') as f:
                 average_mats_random_types.append(pickle.load(f))
 
-    full_single_auc = roc_auc_score(data_adj_mat.flatten(), full_single_type_average_mat.flatten())
-    full_coarse_auc = roc_auc_score(data_adj_mat.flatten(), full_coarse_types_average_mat.flatten())
-    full_sub_auc = roc_auc_score(data_adj_mat.flatten(), full_sub_types_average_mat.flatten())
+    full_single_auc = roc_auc_score(_remove_main_diag_flatten(data_adj_mat),
+                                    _remove_main_diag_flatten(full_single_type_average_mat))
+    full_coarse_auc = roc_auc_score(_remove_main_diag_flatten(data_adj_mat),
+                                    _remove_main_diag_flatten(full_coarse_types_average_mat))
+    full_sub_auc = roc_auc_score(_remove_main_diag_flatten(data_adj_mat),
+                                 _remove_main_diag_flatten(full_sub_types_average_mat))
 
     full_model_aucs = np.zeros(len(num_types_range))
     full_model_random_types_aucs = np.zeros((len(num_types_range)))
     for num_types in num_types_range:
         full_average_mat = average_mats_inferred_types[num_types - 1]
-        full_model_aucs[num_types - 1] = roc_auc_score(data_adj_mat.flatten(), full_average_mat.flatten())
+        full_model_aucs[num_types - 1] = roc_auc_score(_remove_main_diag_flatten(data_adj_mat),
+                                                       _remove_main_diag_flatten(full_average_mat))
 
         full_average_mat_random_types = average_mats_random_types[num_types - 1]
-        full_model_random_types_aucs[num_types - 1] = roc_auc_score(data_adj_mat.flatten(),
-                                                                    full_average_mat_random_types.flatten())
+        full_model_random_types_aucs[num_types - 1] = roc_auc_score(_remove_main_diag_flatten(data_adj_mat),
+                                                                    _remove_main_diag_flatten(
+                                                                        full_average_mat_random_types))
 
     fig = plt.figure(figsize=SQUARE_FIG_SIZE)
     fontsize = FONT_SIZE
     line_width = LINE_WIDTH
     markersize = MARKER_SIZE * 3
-    pylab.rcParams['xtick.major.pad'] = '0.5'
-    pylab.rcParams['ytick.major.pad'] = '0.5'
     axis_labelpad = 1
     main_axes = [0.2, 0.175, 0.78, 0.78]
 
@@ -625,16 +634,17 @@ def fig_2_d(out_path="Figures\\Fig2", saved_calcs_path="Figures\SavedCalcs\\aver
     ax1.set_xlim(0, 14)
     ax1.set_ylim(0.5, 0.85)
 
-    ax1.plot(num_types_range, full_model_random_types_aucs, marker='.', c='dimgray', lw=line_width,
+    ax1.plot(num_types_range, full_model_random_types_aucs, marker='.', c=adjust_lightness('dimgray', 1.5),
+             lw=line_width,
              markersize=markersize,
              label='random types')
     ax1.plot([1, 3, 13], [full_single_auc, full_coarse_auc, full_sub_auc], marker='.',
-             c=(BIRTH_TIMES_BASE_COLOR + DISTANCES_BASE_COLOR) / 2, lw=line_width,
+             c=FULL_MODEL_COLOR, lw=line_width,
              markersize=markersize, label='functional types')
     ax1.plot(num_types_range, full_model_aucs, marker='.',
              c=SINGLE_EPOCH_INFERRED_COLOR, lw=line_width,
              markersize=markersize, label='inferred types')
-    plt.savefig(os.path.join(out_path, '2_d.pdf'), format='pdf')
+    plt.savefig(os.path.join(out_path, '2_g.pdf'), format='pdf')
     plt.show()
 
 
@@ -657,10 +667,10 @@ def _get_neurons_idx_by_inferred_type(num_types):
     return neurons_idx_by_type
 
 
-def fig_2_e_f_g(out_path="Figures\\Fig2"):
+def fig_2_d_e_f(out_path=os.path.join("Figures", "Fig2")):
     np.random.seed(123456789)
     num_types = 8
-    train_data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset7.pkl'
+    train_data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset7.pkl")
     with open(train_data_connectome_path, 'rb') as f:
         train_data_connectome = pickle.load(f)
     train_data_adj_mat = nx.to_numpy_array(train_data_connectome, nodelist=sorted(list(train_data_connectome.nodes)))
@@ -669,7 +679,7 @@ def fig_2_e_f_g(out_path="Figures\\Fig2"):
 
     train_data_adj_mat = train_data_adj_mat[neurons_idx_by_type, neurons_idx_by_type.T]
 
-    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
+    data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     alphabetic_neuronal_names = sorted(data_connectome.nodes)
@@ -677,7 +687,8 @@ def fig_2_e_f_g(out_path="Figures\\Fig2"):
 
     data_adj_mat = data_adj_mat[neurons_idx_by_type, neurons_idx_by_type.T]
 
-    model_adj_mat_path = f"SavedOutputs\IndependentModel\\average_adj_mats\InferredTypes\\{num_types}_types.pkl"
+    model_adj_mat_path = os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "InferredTypes",
+                                      f"{num_types}_types.pkl")
     with open(model_adj_mat_path, 'rb') as f:
         model_average_adj_mat = pickle.load(f)
 
@@ -686,12 +697,13 @@ def fig_2_e_f_g(out_path="Figures\\Fig2"):
     model_single_draw = model_single_draw[neurons_idx_by_type, neurons_idx_by_type.T]
 
     data_cmap = colors.LinearSegmentedColormap.from_list('data', [(1, 1, 1), (0, 0, 0)])
-    single_color = SINGLE_EPOCH_INFERRED_COLOR
+    single_color = adjust_lightness(SINGLE_EPOCH_INFERRED_COLOR, 0.75)
     model_cmap = colors.LinearSegmentedColormap.from_list('single_epoch', [(1, 1, 1), single_color])
-    axis_ticks = range(0, 181, 60)
+    padding = 1
+    axis_ticks = range(0 + padding, 181 + padding, 60)
     fig_size = SQUARE_FIG_SIZE
     fontsize = FONT_SIZE
-    main_axes = [0.18, 0.18, 0.75, 0.75]
+    main_axes = (0.18, 0.18, 0.75, 0.75)
     pylab.rcParams['xtick.major.pad'] = '0.5'
     pylab.rcParams['ytick.major.pad'] = '0.5'
     axis_labelpad = 1
@@ -701,14 +713,14 @@ def fig_2_e_f_g(out_path="Figures\\Fig2"):
     x0, x1 = ax0.get_xlim()
     y0, y1 = ax0.get_ylim()
     ax0.set_aspect(abs(x1 - x0) / abs(y1 - y0), 'box')
-    im0 = ax0.imshow(train_data_adj_mat, cmap=data_cmap)
+    im0 = ax0.imshow(np.pad(train_data_adj_mat, padding), cmap=data_cmap, interpolation='none')
     ax0.set_xlabel("post-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax0.set_ylabel("pre-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax0.set_xticks(axis_ticks)
-    ax0.set_xticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax0.set_xticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     ax0.set_yticks(axis_ticks)
-    ax0.set_yticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
-    fig0.savefig(os.path.join(out_path, '2_e_worm_7.pdf'), format='pdf')
+    ax0.set_yticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
+    fig0.savefig(os.path.join(out_path, '2_d_worm_7.pdf'), format='pdf')
     plt.show()
 
     fig1 = plt.figure(1, figsize=fig_size)
@@ -716,14 +728,14 @@ def fig_2_e_f_g(out_path="Figures\\Fig2"):
     x0, x1 = ax1.get_xlim()
     y0, y1 = ax1.get_ylim()
     ax1.set_aspect(abs(x1 - x0) / abs(y1 - y0), 'box')
-    im1 = ax1.imshow(data_adj_mat, cmap=data_cmap)
+    im1 = ax1.imshow(np.pad(data_adj_mat, padding), cmap=data_cmap, interpolation='none')
     ax1.set_xlabel("post-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax1.set_ylabel("pre-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax1.set_xticks(axis_ticks)
-    ax1.set_xticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax1.set_xticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     ax1.set_yticks(axis_ticks)
-    ax1.set_yticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
-    fig1.savefig(os.path.join(out_path, '2_f_worm_8.pdf'), format='pdf')
+    ax1.set_yticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
+    fig1.savefig(os.path.join(out_path, '2_e_worm_8.pdf'), format='pdf')
     plt.show()
 
     fig2 = plt.figure(2, figsize=fig_size)
@@ -731,19 +743,48 @@ def fig_2_e_f_g(out_path="Figures\\Fig2"):
     x0, x1 = ax2.get_xlim()
     y0, y1 = ax2.get_ylim()
     ax2.set_aspect(abs(x1 - x0) / abs(y1 - y0), 'box')
-    im2 = ax2.imshow(model_single_draw, cmap=model_cmap)
+    im2 = ax2.imshow(np.pad(model_single_draw, padding), cmap=model_cmap, interpolation='none')
     ax2.set_xlabel("post-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax2.set_ylabel("pre-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax2.set_xticks(axis_ticks)
-    ax2.set_xticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax2.set_xticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     ax2.set_yticks(axis_ticks)
-    ax2.set_yticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
-    fig2.savefig(os.path.join(out_path, '2_g.pdf'), format='pdf')
+    ax2.set_yticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
+    fig2.savefig(os.path.join(out_path, '2_f.pdf'), format='pdf')
     plt.show()
 
 
-def fig_graph_features_a(out_path="Figures\\FigGraphFeatures"):
-    data_path = "CElegansData\SubTypes\\connectomes\Dataset8.pkl"
+def _plot_shaded_1_2_stds(ax, xs, data_ys, model_mean_ys, model_std_ys, marker=None):
+    markersize = MARKER_SIZE if marker is None else 3 * MARKER_SIZE
+    ax.plot(xs, data_ys, marker=marker, markersize=markersize, lw=LINE_WIDTH,
+            label="data", color='k', zorder=1)
+    ax.fill_between(
+        xs,
+        y1=model_mean_ys + model_std_ys,
+        y2=np.maximum(model_mean_ys - model_std_ys, 0),
+        color=SINGLE_EPOCH_INFERRED_COLOR,
+        zorder=0,
+    )
+    ax.fill_between(
+        xs,
+        y1=model_mean_ys + 2 * model_std_ys,
+        y2=model_mean_ys + model_std_ys,
+        color=SINGLE_EPOCH_INFERRED_COLOR,
+        alpha=0.5,
+        zorder=0,
+    )
+    ax.fill_between(
+        xs,
+        y1=np.maximum(model_mean_ys - model_std_ys, 0),
+        y2=np.maximum(model_mean_ys - 2 * model_std_ys, 0),
+        color=SINGLE_EPOCH_INFERRED_COLOR,
+        alpha=0.5,
+        zorder=0,
+    )
+
+
+def fig_graph_features_a(out_path=os.path.join("Figures", "FigGraphFeatures")):
+    data_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_mat = nx.to_numpy_array(data, nodelist=sorted(data.nodes))
@@ -751,7 +792,8 @@ def fig_graph_features_a(out_path="Figures\\FigGraphFeatures"):
     data_out_degrees = data_mat.sum(axis=1)
 
     num_types = 8
-    model_average_mat_path = f"SavedOutputs\IndependentModel\\average_adj_mats\InferredTypes\\{num_types}_types.pkl"
+    model_average_mat_path = os.path.join(f"SavedOutputs", "IndependentModel", "average_adj_mats", "InferredTypes",
+                                          f"{num_types}_types.pkl")
     with open(model_average_mat_path, 'rb') as f:
         model_average_mat = pickle.load(f)
     num_neurons = model_average_mat.shape[0]
@@ -763,12 +805,9 @@ def fig_graph_features_a(out_path="Figures\\FigGraphFeatures"):
     max_in_deg = max(np.max(np.argwhere(data_in_deg_hist > 0)),
                      np.max(np.argwhere(model_average_in_deg_hist > 10e-6)))
     data_out_deg_hist, _ = np.histogram(data_out_degrees, bins=range(num_neurons + 1))
-    num_stds = 2
 
     fig = plt.figure(figsize=RECT_SMALL_FIG_SIZE)
     fontsize = FONT_SIZE
-    markersize = MARKER_SIZE * 3
-    line_width = LINE_WIDTH
     main_axes = [0.23, 0.23, 0.71, 0.76]
     axes_labelpad = 2
     pylab.rcParams['xtick.major.pad'] = '0.5'
@@ -785,13 +824,14 @@ def fig_graph_features_a(out_path="Figures\\FigGraphFeatures"):
     ax1.set_xlabel('in-degree', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel('frequency', fontsize=fontsize, labelpad=axes_labelpad)
 
-    ax1.plot(range(max_in_deg + 1), data_in_deg_hist[:max_in_deg + 1], marker='.', markersize=markersize, lw=line_width,
-             label="data", color='k')
-    ax1.fill_between(range(max_in_deg + 1),
-                     y1=model_average_in_deg_hist[:max_in_deg + 1] + num_stds * model_in_deg_hist_std[:max_in_deg + 1],
-                     y2=np.clip(
-                         model_average_in_deg_hist[:max_in_deg + 1] - num_stds * model_in_deg_hist_std[:max_in_deg + 1],
-                         a_min=0, a_max=None), color=SINGLE_EPOCH_INFERRED_COLOR, alpha=0.5, label="model")
+    _plot_shaded_1_2_stds(
+        ax=ax1,
+        xs=range(max_in_deg + 1),
+        data_ys=data_in_deg_hist[:max_in_deg + 1],
+        model_mean_ys=model_average_in_deg_hist[:max_in_deg + 1],
+        model_std_ys=model_in_deg_hist_std[:max_in_deg + 1],
+        marker='.'
+    )
     plt.savefig(os.path.join(out_path, 'in_deg_dist.pdf'), format='pdf')
     plt.show()
 
@@ -811,21 +851,22 @@ def fig_graph_features_a(out_path="Figures\\FigGraphFeatures"):
     ax1.set_xlabel('out-degree', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel('frequency', fontsize=fontsize, labelpad=axes_labelpad)
 
-    ax1.plot(range(max_out_deg + 1), data_out_deg_hist[:max_out_deg + 1], marker='.', markersize=markersize,
-             lw=line_width, label="data", color='k')
-    ax1.fill_between(range(max_out_deg + 1),
-                     y1=model_average_out_deg_hist[:max_out_deg + 1] + num_stds * model_out_deg_hist_std[
-                                                                                  :max_out_deg + 1],
-                     y2=np.clip(model_average_out_deg_hist[:max_out_deg + 1] - num_stds * model_out_deg_hist_std[
-                                                                                          :max_out_deg + 1], a_min=0,
-                                a_max=None), color=SINGLE_EPOCH_INFERRED_COLOR, alpha=0.5, label="model")
+    _plot_shaded_1_2_stds(
+        ax=ax1,
+        xs=range(max_out_deg + 1),
+        data_ys=data_out_deg_hist[:max_out_deg + 1],
+        model_mean_ys=model_average_out_deg_hist[:max_out_deg + 1],
+        model_std_ys=model_out_deg_hist_std[:max_out_deg + 1],
+        marker='.'
+    )
     plt.savefig(os.path.join(out_path, 'out_deg_dist.pdf'), format='pdf')
     plt.show()
 
 
-def fig_graph_features_b(out_path="Figures\\FigGraphFeatures"):
+def fig_graph_features_b(out_path=os.path.join("Figures", "FigGraphFeatures")):
     num_types = 8
-    model_average_mat_path = f"SavedOutputs\IndependentModel\\average_adj_mats\InferredTypes\\{num_types}_types.pkl"
+    model_average_mat_path = os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "InferredTypes",
+                                          f"{num_types}_types.pkl")
     with open(model_average_mat_path, 'rb') as f:
         model_average_mat = pickle.load(f)
     num_neurons = model_average_mat.shape[0]
@@ -834,7 +875,7 @@ def fig_graph_features_b(out_path="Figures\\FigGraphFeatures"):
     model_mean_out_degrees = model_average_mat.sum(axis=1)
     model_std_out_degrees = np.sqrt(np.sum(model_average_mat * (1 - model_average_mat), axis=1))
 
-    data_path = "CElegansData\SubTypes\\connectomes\Dataset8.pkl"
+    data_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_mat = nx.to_numpy_array(data, nodelist=sorted(data.nodes))
@@ -842,12 +883,9 @@ def fig_graph_features_b(out_path="Figures\\FigGraphFeatures"):
     data_out_degrees = data_mat.sum(axis=1)
 
     sorted_in_degrees_indices = data_in_degrees.argsort()
-    num_stds = 2
 
     figsize = RECT_SMALL_FIG_SIZE
     fontsize = FONT_SIZE
-    markersize = MARKER_SIZE * 3
-    line_width = LINE_WIDTH
     main_axes = [0.23, 0.23, 0.71, 0.76]
     axes_labelpad = 2
     pylab.rcParams['xtick.major.pad'] = '0.5'
@@ -855,13 +893,14 @@ def fig_graph_features_b(out_path="Figures\\FigGraphFeatures"):
 
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes(main_axes)
-    ax.plot(range(1, num_neurons + 1), data_in_degrees[sorted_in_degrees_indices], '.',
-            markersize=markersize, lw=line_width, label='data', color='k')
-    ax.fill_between(range(1, num_neurons + 1),
-                    y1=model_mean_in_degrees[sorted_in_degrees_indices] + num_stds * model_std_in_degrees[
-                        sorted_in_degrees_indices],
-                    y2=model_mean_in_degrees[sorted_in_degrees_indices] - num_stds * model_std_in_degrees[
-                        sorted_in_degrees_indices], color=SINGLE_EPOCH_INFERRED_COLOR, alpha=0.5, label='model')
+    _plot_shaded_1_2_stds(
+        ax=ax,
+        xs=range(1, num_neurons + 1),
+        data_ys=data_in_degrees[sorted_in_degrees_indices],
+        model_mean_ys=model_mean_in_degrees[sorted_in_degrees_indices],
+        model_std_ys=model_std_in_degrees[sorted_in_degrees_indices],
+        marker='.'
+    )
     ax.set_xlim(-5, 190)
     ax.set_ylim(-2, 47)
     x_axes_ticks = np.arange(0, 181, 60)
@@ -878,13 +917,14 @@ def fig_graph_features_b(out_path="Figures\\FigGraphFeatures"):
     sorted_out_degrees_indices = data_out_degrees.argsort()
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes(main_axes)
-    ax.plot(range(1, num_neurons + 1), data_out_degrees[sorted_out_degrees_indices], '.',
-            markersize=markersize, lw=line_width, label='data', color='k')
-    ax.fill_between(range(1, num_neurons + 1),
-                    y1=model_mean_out_degrees[sorted_out_degrees_indices] + num_stds * model_std_out_degrees[
-                        sorted_out_degrees_indices],
-                    y2=model_mean_out_degrees[sorted_out_degrees_indices] - num_stds * model_std_out_degrees[
-                        sorted_out_degrees_indices], color=SINGLE_EPOCH_INFERRED_COLOR, alpha=0.5, label='model')
+    _plot_shaded_1_2_stds(
+        ax=ax,
+        xs=range(1, num_neurons + 1),
+        data_ys=data_out_degrees[sorted_out_degrees_indices],
+        model_mean_ys=model_mean_out_degrees[sorted_out_degrees_indices],
+        model_std_ys=model_std_out_degrees[sorted_out_degrees_indices],
+        marker='.'
+    )
     ax.set_xlim(-5, 190)
     ax.set_ylim(-2, 47)
     x_axes_ticks = np.arange(0, 181, 60)
@@ -899,9 +939,9 @@ def fig_graph_features_b(out_path="Figures\\FigGraphFeatures"):
     plt.show()
 
 
-def fig_graph_features_c_d(out_path="Figures\\FigGraphFeatures"):
+def fig_graph_features_c_d(out_path=os.path.join("Figures", "FigGraphFeatures")):
     birth_times_res = 10  # min.
-    data_path = "CElegansData\SubTypes\\connectomes\Dataset8.pkl"
+    data_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     sorted_neurons = sorted(data.nodes)
@@ -933,7 +973,8 @@ def fig_graph_features_c_d(out_path="Figures\\FigGraphFeatures"):
     data_synaptic_birth_times_hist, _ = np.histogram(data_synaptic_birth_times, bins=birth_times_bins)
 
     num_types = 8
-    model_average_mat_path = f"SavedOutputs\IndependentModel\\average_adj_mats\InferredTypes\\{num_types}_types.pkl"
+    model_average_mat_path = os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "InferredTypes",
+                                          f"{num_types}_types.pkl")
     with open(model_average_mat_path, 'rb') as f:
         model_average_mat = pickle.load(f)
     mean_model_syn_len_cumulative_hist = np.zeros(len_bins.size - 1)
@@ -958,9 +999,7 @@ def fig_graph_features_c_d(out_path="Figures\\FigGraphFeatures"):
     std_model_syn_len_cumulative_hist = np.sqrt(std_model_syn_len_cumulative_hist)
     std_model_syn_birth_times_cumulative_hist = np.sqrt(std_model_syn_birth_times_cumulative_hist)
 
-    num_stds = 2
     fontsize = FONT_SIZE
-    line_width = LINE_WIDTH
     main_axes = [0.23, 0.23, 0.71, 0.76]
     axes_labelpad = 1
     y_label_coords = (-0.24, 0.46)
@@ -978,15 +1017,17 @@ def fig_graph_features_c_d(out_path="Figures\\FigGraphFeatures"):
     ax1.set_yticks(y_axes_ticks)
     ax1.set_yticklabels([f'{tick}' if list(y_axes_ticks).index(tick) % 2 == 0 else '' for tick in y_axes_ticks],
                         fontsize=fontsize)
-    ax1.set_xlabel('distance between neurons [$\mu m$]', fontsize=fontsize, labelpad=axes_labelpad)
+    ax1.set_xlabel(r'distance between neurons [$\mu m$]', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel('cumulative frequency', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.yaxis.set_label_coords(y_label_coords[0], y_label_coords[1])
 
-    ax1.plot(len_bins[1:], np.cumsum(data_synaptic_lengths_hist), lw=line_width, label='data', color='k')
-    ax1.fill_between(len_bins[1:], y1=mean_model_syn_len_cumulative_hist + num_stds * std_model_syn_len_cumulative_hist,
-                     y2=mean_model_syn_len_cumulative_hist - num_stds * std_model_syn_len_cumulative_hist,
-                     color=SINGLE_EPOCH_INFERRED_COLOR,
-                     alpha=0.5, label='model')
+    _plot_shaded_1_2_stds(
+        ax=ax1,
+        xs=len_bins[1:],
+        data_ys=np.cumsum(data_synaptic_lengths_hist),
+        model_mean_ys=mean_model_syn_len_cumulative_hist,
+        model_std_ys=std_model_syn_len_cumulative_hist,
+    )
     plt.savefig(os.path.join(out_path, 'connected_neurons_dist.pdf'), format='pdf')
     plt.show()
 
@@ -1005,25 +1046,29 @@ def fig_graph_features_c_d(out_path="Figures\\FigGraphFeatures"):
     ax1.set_xlabel('worm age [min.]', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel('cumulative frequency', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.yaxis.set_label_coords(y_label_coords[0], y_label_coords[1])
-    plt.plot(birth_times_bins[1:], np.cumsum(data_synaptic_birth_times_hist), lw=line_width, label='data', color='k')
-    plt.fill_between(birth_times_bins[1:],
-                     y1=mean_model_syn_birth_times_cumulative_hist + num_stds * std_model_syn_birth_times_cumulative_hist,
-                     y2=mean_model_syn_birth_times_cumulative_hist - num_stds * std_model_syn_birth_times_cumulative_hist,
-                     color=SINGLE_EPOCH_INFERRED_COLOR, alpha=0.5, label='model')
+    _plot_shaded_1_2_stds(
+        ax=ax1,
+        xs=birth_times_bins[1:],
+        data_ys=np.cumsum(data_synaptic_birth_times_hist),
+        model_mean_ys=mean_model_syn_birth_times_cumulative_hist,
+        model_std_ys=std_model_syn_birth_times_cumulative_hist,
+    )
     plt.savefig(os.path.join(out_path, 'connected_neurons_birth_times.pdf'), format='pdf')
     plt.show()
 
 
-def fig_graph_features_e(out_path="Figures\\FigGraphFeatures",
-                         saved_calcs_path="Figures\SavedCalcs\\triads_distributions\independent_model",
+def fig_graph_features_e(out_path=os.path.join("Figures", "FigGraphFeatures"),
+                         saved_calcs_path=os.path.join("Figures", "SavedCalcs", "triads_distributions",
+                                                       "independent_model"),
                          is_saved=False, do_save=True):
-    data_path = "CElegansData\SubTypes\\connectomes\Dataset8.pkl"
+    data_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_triads_distribution = calc_norm_triad_motifs_dist(data)
 
     num_types = 8
-    model_outputs_path = f"SavedOutputs\IndependentModel\connectomes\InferredTypes\\{num_types}_types"
+    model_outputs_path = os.path.join("SavedOutputs", "IndependentModel", "connectomes", "InferredTypes",
+                                      f"{num_types}_types")
     files = os.listdir(model_outputs_path)
     model_triad_distributions = np.zeros((NUM_MODEL_SAMPLES_FOR_STATISTICS, NUM_TRIAD_TYPES))
     for i in range(NUM_MODEL_SAMPLES_FOR_STATISTICS):
@@ -1071,17 +1116,19 @@ def fig_graph_features_e(out_path="Figures\\FigGraphFeatures",
     plt.show()
 
 
-def fig_graph_features_f(out_path="Figures\\FigGraphFeatures",
-                         saved_calcs_path="Figures\SavedCalcs\\triads_distributions\\reciprocal_model",
+def fig_graph_features_f(out_path=os.path.join("Figures", "FigGraphFeatures"),
+                         saved_calcs_path=os.path.join("Figures", "SavedCalcs", "triads_distributions",
+                                                       "reciprocal_model"),
                          is_saved=False, do_save=True):
-    data_path = "CElegansData\SubTypes\\connectomes\\Dataset8.pkl"
+    data_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_triads = calc_norm_triad_motifs_dist(data)
 
     gamma = 7
     num_types = 8
-    connectomes_path = f"SavedOutputs\ReciprocalModel\FullDataset\connectomes\\{num_types}_types\gamma{gamma}"
+    connectomes_path = os.path.join("SavedOutputs", "ReciprocalModel", "FullDataset", "connectomes",
+                                    f"{num_types}_types", f"gamma{gamma}")
     files_list = os.listdir(connectomes_path)
     num_files = len(files_list)
     model_triads = np.zeros((num_files, NUM_TRIAD_TYPES))
@@ -1129,13 +1176,14 @@ def fig_graph_features_f(out_path="Figures\\FigGraphFeatures",
     plt.show()
 
 
-def fig_inferred_types_bio_interpretation_a(out_path="Figures\\FigInfTypesBioInter"):
+def fig_inferred_types_bio_interpretation_a(out_path=os.path.join("Figures", "FigInfTypesBioInter")):
     num_inferred_types = 8
     art_types_worm_7_by_names = convert_indices_to_names_in_artificial_types(
-        f'CElegansData\InferredTypes\\types\\{num_inferred_types}.pkl',
-        'CElegansData\\nerve_ring_neurons_subset.pkl')
-    cook_types_list, cook_types_names = create_cook_types_list('CElegansData\\nerve_ring_neurons_subset.pkl')
-    with open('CElegansData\\nerve_ring_neurons_subset.pkl', 'rb') as f:
+        os.path.join("CElegansData", "InferredTypes", "types", f"{num_inferred_types}.pkl"),
+        os.path.join("CElegansData", "nerve_ring_neurons_subset.pkl"))
+    cook_types_list, cook_types_names = create_cook_types_list(
+        os.path.join("CElegansData", "nerve_ring_neurons_subset.pkl"))
+    with open(os.path.join("CElegansData", "nerve_ring_neurons_subset.pkl"), 'rb') as f:
         neurons_list = pickle.load(f)
 
     cook_inferred_join_prob = generate_cluster_intersection_joint_prob_map(neurons_list, cook_types_list,
@@ -1171,13 +1219,13 @@ def fig_inferred_types_bio_interpretation_a(out_path="Figures\\FigInfTypesBioInt
     pylab.rcParams['ytick.major.pad'] = '0.5'
     axis_labelpad = 1
     colorbar_labelpad = 10
-    cook_types_color = COOK_TYPES_COLOR
-    inferred_types_color = 'darkturquoise'
     fig = plt.figure(figsize=SQUARE_FIG_SIZE)
     ax = fig.add_axes(main_axes)
     im = ax.imshow(cook_inferred_join_prob,
-                   cmap=colors.LinearSegmentedColormap.from_list('steelblue', ['white', 'steelblue']), vmin=min_value,
-                   vmax=max_value)
+                   cmap='Grays',
+                   vmin=min_value,
+                   vmax=max_value
+                   )
     cbar_ax = fig.add_axes(colorbar_axes)
     cbar_ticks = np.arange(0, 0.11, 0.025)
     cbar = fig.colorbar(im, cax=cbar_ax, ticks=cbar_ticks)
@@ -1185,24 +1233,25 @@ def fig_inferred_types_bio_interpretation_a(out_path="Figures\\FigInfTypesBioInt
         [f'{cbar_ticks[0]:.2f}', '', f'{cbar_ticks[2]:.2f}', '', f'{cbar_ticks[4]:.2f}'],
         fontsize=fontsize)
     cbar.ax.set_ylabel('overlap', rotation=270, fontsize=fontsize, labelpad=colorbar_labelpad)
-    ax.set_ylabel('traditional type', fontsize=fontsize, labelpad=axis_labelpad, color=cook_types_color)
-    ax.set_xlabel('inferred type', fontsize=fontsize, labelpad=axis_labelpad, color=inferred_types_color)
+    ax.set_ylabel('traditional type', fontsize=fontsize, labelpad=axis_labelpad, color=FULL_MODEL_COLOR)
+    ax.set_xlabel('inferred type', fontsize=fontsize, labelpad=axis_labelpad, color=SINGLE_EPOCH_INFERRED_COLOR)
     ax.set_xticks(np.arange(num_inferred_types))
     ax.set_xticklabels([f'C{i}' for i in range(num_inferred_types)], fontsize=fontsize, rotation=315,
-                       color=inferred_types_color)
+                       color=SINGLE_EPOCH_INFERRED_COLOR)
     ax.set_yticks(np.arange(len(cook_types_names)))
-    ax.set_yticklabels(sorted_cook_types_names, fontsize=fontsize, color=cook_types_color)
+    ax.set_yticklabels(sorted_cook_types_names, fontsize=fontsize, color=FULL_MODEL_COLOR)
     plt.savefig(os.path.join(out_path, f'panel_a_{num_inferred_types}_types.pdf'), format='pdf')
     plt.show()
 
 
-def fig_inferred_types_bio_interpretation_b(out_path="Figures\\FigInfTypesBioInter"):
+def fig_inferred_types_bio_interpretation_b(out_path=os.path.join("Figures", "FigInfTypesBioInter")):
     num_inferred_types = 8
     num_cook_types = 13
-    data_path = f"CElegansData\InferredTypes\\connectomes\\{num_inferred_types}_types\\Dataset7.pkl"
+    data_path = os.path.join("CElegansData", "InferredTypes", "connectomes", f"{num_inferred_types}_types",
+                             "Dataset7.pkl")
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
-    with open("CElegansData\\neuronal_types_dict.pkl", 'rb') as f:
+    with open(os.path.join("CElegansData", "neuronal_types_dict.pkl"), 'rb') as f:
         neuronal_cook_types = pickle.load(f)
 
     lengths_inferred_types = {}
@@ -1275,8 +1324,8 @@ def fig_inferred_types_bio_interpretation_b(out_path="Figures\\FigInfTypesBioInt
     pylab.rcParams['ytick.major.pad'] = '0.5'
     axis_labelpad = 1
     main_axes = [0.17, 0.18, 0.81, 0.8]
-    cook_types_color = COOK_TYPES_COLOR
-    inferred_types_color = 'darkturquoise'
+    cook_types_color = FULL_MODEL_COLOR
+    inferred_types_color = SINGLE_EPOCH_INFERRED_COLOR
 
     fig = plt.figure(figsize=fig_size)
     ax1 = fig.add_axes(main_axes)
@@ -1289,7 +1338,7 @@ def fig_inferred_types_bio_interpretation_b(out_path="Figures\\FigInfTypesBioInt
         [f'{y_axes_ticks[i]}' if i == 0 or i == len(y_axes_ticks) - 1 else '' for i in range(len(y_axes_ticks))],
         fontsize=fontsize)
     ax1.set_xlabel('synaptic type index', fontsize=fontsize, labelpad=axis_labelpad)
-    ax1.set_ylabel('distance between\nneurons [$\mu m$]', fontsize=fontsize, labelpad=axis_labelpad - 15)
+    ax1.set_ylabel(r'distance between\nneurons [$\mu m$]', fontsize=fontsize, labelpad=axis_labelpad - 15)
     ax1.set_xlim(-2, num_cook_types ** 2 + 2)
     ax1.set_ylim(0, max(average_lengths_inferred.max() + sem_lengths_inferred.max(),
                         average_lengths_cook.max() + sem_lengths_cook.max()))
@@ -1355,16 +1404,16 @@ def fig_inferred_types_bio_interpretation_b(out_path="Figures\\FigInfTypesBioInt
     plt.show()
 
 
-def fig_inferred_types_bio_interpretation_c_d(out_path="Figures\\FigInfTypesBioInter"):
-    neuronal_list_path = "CElegansData\\nerve_ring_neurons_subset.pkl"
+def fig_inferred_types_bio_interpretation_c_d(out_path=os.path.join("Figures", "FigInfTypesBioInter")):
+    neuronal_list_path = os.path.join("CElegansData", "nerve_ring_neurons_subset.pkl")
     cook_types, _ = create_cook_types_list(neuronal_list_path)
     functional_neuronal_types = convert_names_to_indices_neuronal_types(cook_types, neuronal_list_path)
     num_types = 8
-    types_path = f"CElegansData\InferredTypes\\types\\{num_types}.pkl"
+    types_path = os.path.join("CElegansData", "InferredTypes", "types", f"{num_types}.pkl")
     with open(types_path, 'rb') as f:
         inferred_neuronal_types = pickle.load(f)[1]
 
-    data_path = f"CElegansData\InferredTypes\\connectomes\\{num_types}_types\\Dataset8.pkl"
+    data_path = os.path.join("CElegansData", "InferredTypes", "connectomes", f"{num_types}_types", "Dataset8.pkl")
     with open(data_path, 'rb') as f:
         data = pickle.load(f)
     data_mat = nx.to_numpy_array(data, nodelist=sorted(data.nodes))
@@ -1451,10 +1500,10 @@ def fig_inferred_types_bio_interpretation_c_d(out_path="Figures\\FigInfTypesBioI
     ax = fig.add_axes(main_axes)
     ax.errorbar(range(1, num_functional_types + 1), functional_types_mean_in_degs[functional_in_degs_order],
                 yerr=functional_types_std_in_degs[functional_in_degs_order],
-                marker='.', lw=line_width, markersize=markersize, color=COOK_TYPES_COLOR)
+                marker='.', lw=line_width, markersize=markersize, color=FULL_MODEL_COLOR)
     ax.errorbar(range(1, num_inferred_types + 1), inferred_types_mean_in_degs[inferred_in_degs_order],
                 yerr=inferred_types_std_in_degs[inferred_in_degs_order],
-                marker='.', lw=line_width, markersize=markersize, color='darkturquoise')
+                marker='.', lw=line_width, markersize=markersize, color=SINGLE_EPOCH_INFERRED_COLOR)
     ax.set_xlabel('ascending in-degree type index', fontsize=fontsize, labelpad=axes_labelpad)
     ax.set_ylabel('average in-degree', fontsize=fontsize, labelpad=axes_labelpad)
     ax.set_xlim(0, 14)
@@ -1472,10 +1521,10 @@ def fig_inferred_types_bio_interpretation_c_d(out_path="Figures\\FigInfTypesBioI
     ax = fig.add_axes(main_axes)
     ax.errorbar(range(1, num_functional_types + 1), functional_types_mean_out_degs[functional_out_degs_order],
                 yerr=functional_types_std_out_degs[functional_out_degs_order],
-                marker='.', lw=line_width, markersize=markersize, color=COOK_TYPES_COLOR)
+                marker='.', lw=line_width, markersize=markersize, color=FULL_MODEL_COLOR)
     ax.errorbar(range(1, num_inferred_types + 1), inferred_types_mean_out_degs[inferred_out_degs_order],
                 yerr=inferred_types_std_out_degs[inferred_out_degs_order],
-                marker='.', lw=line_width, markersize=markersize, color='darkturquoise')
+                marker='.', lw=line_width, markersize=markersize, color=SINGLE_EPOCH_INFERRED_COLOR)
     ax.set_xlabel('ascending out-degree type index', fontsize=fontsize, labelpad=axes_labelpad)
     ax.set_ylabel('average out-degree', fontsize=fontsize, labelpad=axes_labelpad)
     ax.set_xlim(0, 14)
@@ -1493,11 +1542,11 @@ def fig_inferred_types_bio_interpretation_c_d(out_path="Figures\\FigInfTypesBioI
     ax = fig.add_axes(main_axes)
     ax.plot(functional_max_mean_deg[functional_max_mean_deg_order],
             functional_types_sizes[functional_max_mean_deg_order], marker='.',
-            lw=0, markersize=1.5 * markersize, color=COOK_TYPES_COLOR)
+            lw=0, markersize=1.5 * markersize, color=FULL_MODEL_COLOR)
     ax.plot(inferred_max_mean_deg[inferred_max_mean_deg_order], inferred_types_sizes[inferred_max_mean_deg_order],
             marker='.',
-            lw=0, markersize=1.5 * markersize, color='darkturquoise')
-    ax.set_xlabel('$\max(\langle d_{in} \\rangle, \langle d_{out} \\rangle)$', fontsize=fontsize,
+            lw=0, markersize=1.5 * markersize, color=SINGLE_EPOCH_INFERRED_COLOR)
+    ax.set_xlabel(r'$\max(\langle d_{in} \\rangle, \langle d_{out} \\rangle)$', fontsize=fontsize,
                   labelpad=axes_labelpad)
     ax.set_ylabel('number of neurons', fontsize=fontsize, labelpad=axes_labelpad)
     ax.set_xlim(5, 36)
@@ -1515,16 +1564,20 @@ def fig_inferred_types_bio_interpretation_c_d(out_path="Figures\\FigInfTypesBioI
 def _fig_6_a(worms_indices, split):
     np.random.seed(123456789)
     num_types = 8
-    data_dir_path = f"CElegansData\InferredTypes\\connectomes\\{num_types}_types"
-    dyads_dist_single_epoch_dir_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\SingleDevStage"
-    dyads_dist_multiple_epochs_dir_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages"
-    neuronal_types_path = f"CElegansData\InferredTypes\\types\\{num_types}.pkl"
-    neurons_list_path = "CElegansData\\nerve_ring_neurons_subset.pkl"
+    data_dir_path = os.path.join("CElegansData", "InferredTypes", "connectomes", f"{num_types}_types")
+    dyads_dist_single_epoch_dir_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                                                    "dyads_distributions", "SingleDevStage")
+    dyads_dist_multiple_epochs_dir_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                                                       "dyads_distributions", "ThreeDevStages")
+    neuronal_types_path = os.path.join("CElegansData", "InferredTypes", "types", f"{num_types}.pkl")
+    neurons_list_path = os.path.join("CElegansData", "nerve_ring_neurons_subset.pkl")
 
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_single_epoch.pkl",
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_single_epoch.pkl"),
               'rb') as f:
         smi_single = pickle.load(f)[f'split{split}']['S-']
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_3_epochs.pkl"),
               'rb') as f:
         smi_mulitple = pickle.load(f)[f'split{split}']['S-']
 
@@ -1536,18 +1589,19 @@ def _fig_6_a(worms_indices, split):
     with open(neurons_list_path, 'rb') as f:
         neurons_list = pickle.load(f)
 
-    single_color = SINGLE_EPOCH_INFERRED_COLOR
+    single_color = adjust_lightness(SINGLE_EPOCH_INFERRED_COLOR, 0.75)
     multiple_color = adjust_lightness('lightcoral', 1.0)
-    padding = 0.05
-    single_axis_size = (1 - len(worms_indices) * padding) / len(worms_indices)
-    fig_ratio = (3 * padding + 3 * single_axis_size)
+    fig_padding = 0.05
+    single_axis_size = (1 - len(worms_indices) * fig_padding) / len(worms_indices)
+    fig_ratio = (3 * fig_padding + 3 * single_axis_size)
     fig_width = 4 * len(worms_indices)
     fig1 = plt.figure(1, figsize=(fig_width * CM_TO_INCH, fig_ratio * fig_width * CM_TO_INCH))
     axs = fig1.subplots(3, len(worms_indices))
     vmax = 1
     fontsize = FONT_SIZE
     tick_labelpad = 1
-    axes_ticks = range(0, 161, 80)
+    padding = 1
+    axes_ticks = range(0 + padding, 161 + padding, 80)
     x_ticks_rot = 90
     cur_col = 0
 
@@ -1582,15 +1636,16 @@ def _fig_6_a(worms_indices, split):
 
         cur_data_mat = cur_data_mat[cur_neurons_idx_by_type, cur_neurons_idx_by_type.T]
         cur_ax = axs[0, cur_col]
-        cur_ax.imshow(cur_data_mat, cmap=colors.LinearSegmentedColormap.from_list('data', [(1, 1, 1), (0, 0, 0)]),
-                      vmin=0, vmax=vmax)
+        cur_ax.imshow(np.pad(cur_data_mat, padding),
+                      cmap=colors.LinearSegmentedColormap.from_list('data', [(1, 1, 1), (0, 0, 0)]),
+                      vmin=0, vmax=vmax, interpolation='none')
         if i > 1:
             cur_ax.set_yticks(axes_ticks)
             cur_ax.set_yticklabels([])
         else:
             cur_ax.set_yticks(axes_ticks)
             cur_ax.yaxis.set_tick_params(pad=tick_labelpad)
-            cur_ax.set_yticklabels([f'{tick}' for tick in axes_ticks], fontsize=fontsize)
+            cur_ax.set_yticklabels([f'{tick - padding}' for tick in axes_ticks], fontsize=fontsize)
         cur_ax.set_xticks(axes_ticks)
         cur_ax.set_xticklabels([])
 
@@ -1599,16 +1654,16 @@ def _fig_6_a(worms_indices, split):
                                                                    cur_alphabetic_neuronal_names)
         cur_single_mat = cur_single_mat[cur_neurons_idx_by_type, cur_neurons_idx_by_type.T]
         cur_ax = axs[1, cur_col]
-        cur_ax.imshow(cur_single_mat,
+        cur_ax.imshow(np.pad(cur_single_mat, padding),
                       cmap=colors.LinearSegmentedColormap.from_list('single_epoch', [(1, 1, 1), single_color]),
-                      vmin=0, vmax=vmax)
+                      vmin=0, vmax=vmax, interpolation='none')
         if i > 1:
             cur_ax.set_yticks(axes_ticks)
             cur_ax.set_yticklabels([])
         else:
             cur_ax.set_yticks(axes_ticks)
             cur_ax.yaxis.set_tick_params(pad=tick_labelpad)
-            cur_ax.set_yticklabels([f'{tick}' for tick in axes_ticks], fontsize=fontsize)
+            cur_ax.set_yticklabels([f'{tick - padding}' for tick in axes_ticks], fontsize=fontsize)
         cur_ax.set_xticks(axes_ticks)
         cur_ax.set_xticklabels([])
 
@@ -1617,29 +1672,29 @@ def _fig_6_a(worms_indices, split):
                                                                      cur_alphabetic_neuronal_names)
         cur_multiple_mat = cur_multiple_mat[cur_neurons_idx_by_type, cur_neurons_idx_by_type.T]
         cur_ax = axs[2, cur_col]
-        cur_ax.imshow(cur_multiple_mat,
+        cur_ax.imshow(np.pad(cur_multiple_mat, padding),
                       cmap=colors.LinearSegmentedColormap.from_list('multiple_color',
                                                                     [(1, 1, 1),
                                                                      multiple_color]),
-                      vmin=0, vmax=vmax)
+                      vmin=0, vmax=vmax, interpolation='none')
         if i > 1:
             cur_ax.set_yticks(axes_ticks)
             cur_ax.set_yticklabels([])
         else:
             cur_ax.set_yticks(axes_ticks)
             cur_ax.yaxis.set_tick_params(pad=tick_labelpad)
-            cur_ax.set_yticklabels([f'{tick}' for tick in axes_ticks], fontsize=fontsize)
+            cur_ax.set_yticklabels([f'{tick - padding}' for tick in axes_ticks], fontsize=fontsize)
         cur_ax.set_xticks(axes_ticks)
         cur_ax.xaxis.set_tick_params(pad=tick_labelpad)
-        cur_ax.set_xticklabels([f'{tick}' for tick in axes_ticks], fontsize=fontsize, rotation=x_ticks_rot)
+        cur_ax.set_xticklabels([f'{tick - padding}' for tick in axes_ticks], fontsize=fontsize, rotation=x_ticks_rot)
 
         cur_col += 1
 
-    plt.subplots_adjust(left=padding, bottom=padding / fig_ratio, right=0.99, top=0.99, wspace=padding,
-                        hspace=padding / fig_ratio)
+    plt.subplots_adjust(left=fig_padding, bottom=fig_padding / fig_ratio, right=0.99, top=0.99, wspace=fig_padding,
+                        hspace=fig_padding / fig_ratio)
 
 
-def fig_6_a(out_path="Figures\\Fig6", split=16):
+def fig_6_a(out_path=os.path.join("Figures", "Fig6"), split=16):
     _fig_6_a([1, 3, 5, 8], split=split)
     plt.savefig(os.path.join(out_path, '6_a.pdf'), format='pdf')
     plt.show()
@@ -1649,20 +1704,27 @@ def fig_6_a(out_path="Figures\\Fig6", split=16):
     plt.show()
 
 
-def fig_6_b(out_path="Figures\\Fig6\\b"):
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_single_epoch.pkl",
+def fig_6_b(out_path=os.path.join("Figures", "Fig6", "b")):
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_single_epoch.pkl"),
               'rb') as f:
         max_like_params_single = pickle.load(f)
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_3_epochs.pkl"),
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
     for split in range(1, num_splits + 1):
         smi_single = max_like_params_single[f'split{split}']['S-']
         smi_multiple = max_like_params_multiple[f'split{split}']['S-']
-        single_model_dyads_test_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\SingleDevStage\TestSet\\split{split}\\{smi_single:.5f}\\3500.pkl"
-        multiple_model_dyads_test_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\TestSet\\split{split}\\{smi_multiple:.5f}\\3500.pkl"
-        test_data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\test\Dataset8.pkl"
+        single_model_dyads_test_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                                                    "dyads_distributions", "SingleDevStage", "TestSet",
+                                                    f"split{split}", f"{smi_single:.5f}", "3500.pkl")
+        multiple_model_dyads_test_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                                                      "dyads_distributions", "ThreeDevStages", "TestSet",
+                                                      f"split{split}", f"{smi_multiple:.5f}", "3500.pkl")
+        test_data_path = os.path.join("CElegansData", "InferredTypes", "synapses_lists", "8_types",
+                                      f"split{split}", "test", "Dataset8.pkl")
         with open(test_data_path, 'rb') as f:
             test_data = sorted(pickle.load(f))
         test_data_exists = []
@@ -1714,13 +1776,15 @@ def fig_6_b(out_path="Figures\\Fig6\\b"):
         plt.show()
 
 
-def fig_6_d(out_path="Figures\\Fig6\\d"):
+def fig_6_d(out_path=os.path.join("Figures", "Fig6", "d")):
     num_stds = 1
     train_or_test = 'Test'
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_single_epoch.pkl",
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_single_epoch.pkl"),
               'rb') as f:
         max_like_params_single = pickle.load(f)
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_3_epochs.pkl"),
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     num_splits = 20
@@ -1732,9 +1796,14 @@ def fig_6_d(out_path="Figures\\Fig6\\d"):
     for split in range(1, num_splits + 1):
         smi_single = max_like_params_single[f'split{split}']["S-"]
         smi_multiple = max_like_params_multiple[f'split{split}']["S-"]
-        single_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\dyads_distributions\SingleDevStage\\{train_or_test}Set\\split{split}\\{smi_single:.5f}"
-        multiple_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{smi_multiple:.5f}"
-        data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
+        single_pruning_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                           "SingleDevStage", f"{train_or_test}Set", f"split{split}",
+                                           f"{smi_single:.5f}")
+        multiple_pruning_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                             "ThreeDevStages", f"{train_or_test}Set", f"split{split}",
+                                             f"{smi_multiple:.5f}")
+        data_path = os.path.join("CElegansData", "InferredTypes", "synapses_lists", "8_types", f"split{split}",
+                                 f"{train_or_test.lower()}")
 
         single_pruning_density_std = np.zeros(ADULT_WORM_AGE // 10)
         multiple_pruning_density_std = np.zeros(ADULT_WORM_AGE // 10)
@@ -1810,7 +1879,7 @@ def fig_6_d(out_path="Figures\\Fig6\\d"):
         ax1.plot(data_ages, data_density[split - 1], '.', c='k', markersize=markersize * 1.5, label='data')
         plt.savefig(os.path.join(out_path, f'6_d_split{split}.pdf'), format='pdf')
         plt.show(block=False)
-        plt.pause(3)
+        # plt.pause(3)
         plt.close()
 
     fig1 = plt.figure(1, figsize=RECT_LARGE_FIG_SIZE)
@@ -1859,19 +1928,22 @@ def fig_6_d(out_path="Figures\\Fig6\\d"):
 
     plt.savefig(os.path.join(out_path, f'6_d_average_across_splits.pdf'), format='pdf')
     plt.show(block=False)
-    plt.pause(3)
+    # plt.pause(3)
     plt.close()
 
 
-def fig_6_e(out_path="Figures\\Fig6\\e", saved_calcs_path="Figures\SavedCalcs", is_saved=False, do_save=True):
+def fig_6_e(out_path=os.path.join("Figures", "Fig6", "e"), saved_calcs_path=os.path.join("Figures", "SavedCalcs"),
+            is_saved=False, do_save=True):
     num_splits = 20
     train_or_test = "Test"
     data_ages = np.array(
         [FULL_DEVELOPMENTAL_AGES[stage] for stage in sorted(FULL_DEVELOPMENTAL_AGES.keys())])
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_single_epoch.pkl",
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_single_epoch.pkl"),
               'rb') as f:
         max_like_params_single = pickle.load(f)
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_3_epochs.pkl"),
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
     if not is_saved:
@@ -1880,9 +1952,14 @@ def fig_6_e(out_path="Figures\\Fig6\\e", saved_calcs_path="Figures\SavedCalcs", 
         for split in range(1, num_splits + 1):
             single_smi = max_like_params_single[f'split{split}']['S-']
             multiple_smi = max_like_params_multiple[f'split{split}']['S-']
-            single_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\SingleDevStage\{train_or_test}Set\\split{split}\\{single_smi:.5f}"
-            multiple_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\\ThreeDevStages\{train_or_test}Set\\split{split}\\{multiple_smi:.5f}"
-            data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
+            single_pruning_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                               "SingleDevStage", f"{train_or_test}Set",
+                                               f"split{split}\\{single_smi:.5f}")
+            multiple_pruning_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                                 "ThreeDevStages", f"{train_or_test}Set",
+                                                 f"split{split}\\{multiple_smi:.5f}")
+            data_path = os.path.join("CElegansData", "InferredTypes", "synapses_lists", "8_types", f"split{split}",
+                                     f"{train_or_test.lower()}")
 
             cur_idx = 0
             for age in data_ages:
@@ -1971,13 +2048,16 @@ def fig_6_e(out_path="Figures\\Fig6\\e", saved_calcs_path="Figures\SavedCalcs", 
     plt.close()
 
 
-def fig_6_f(out_path="Figures\\Fig6\\f", saved_calcs_path="Figures\SavedCalcs", is_saved=False, do_save=True):
+def fig_6_f(out_path=os.path.join("Figures", "Fig6", "f"), saved_calcs_path=os.path.join("Figures", "SavedCalcs"),
+            is_saved=False,
+            do_save=True):
     num_splits = 20
     data_ages = np.array(
         [FULL_DEVELOPMENTAL_AGES[stage] for stage in sorted(FULL_DEVELOPMENTAL_AGES.keys())])
     train_or_test = "Test"
     if not is_saved:
-        with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
+        with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                               "max_likelihood_params_per_split_3_epochs.pkl"),
                   'rb') as f:
             max_like_params_multiple = pickle.load(f)
 
@@ -1985,9 +2065,13 @@ def fig_6_f(out_path="Figures\\Fig6\\f", saved_calcs_path="Figures\SavedCalcs", 
         multiple_no_pruning_likelihoods = np.zeros((num_splits, data_ages.size))
         for split in range(1, num_splits + 1):
             smi = max_like_params_multiple[f'split{split}']['S-']
-            multiple_no_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{0:.5f}"
-            multiple_pruning_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\dyads_distributions\ThreeDevStages\\{train_or_test}Set\\split{split}\\{smi:.5f}"
-            data_path = f"CElegansData\InferredTypes\\synapses_lists\8_types\\split{split}\\{train_or_test.lower()}"
+            multiple_no_pruning_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                                                    "dyads_distributions", "ThreeDevStages", f"{train_or_test}Set",
+                                                    f"split{split}", f"{0:.5f}")
+            multiple_pruning_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "dyads_distributions",
+                                                 "ThreeDevStages", f"{train_or_test}Set", f"split{split}", f"{smi:.5f}")
+            data_path = os.path.join("CElegansData", "InferredTypes", "synapses_lists", "8_types", f"split{split}",
+                                     f"{train_or_test.lower()}")
 
             cur_idx = 0
             for age in data_ages:
@@ -2084,18 +2168,20 @@ def worms_overlap(out_path=os.path.join("Figures", "Fig7")):
         pylab.rcParams['ytick.major.pad'] = '0.5'
         axis_labelpad = 1
         fig = plt.figure(figsize=SQUARE_FIG_SIZE)
-        ax = fig.add_axes([0.18, 0.18, 0.75, 0.75])
+        ax = fig.add_axes((0.18, 0.18, 0.75, 0.75))
+        padding = 1
 
         neurons_idx_by_type = _get_neurons_idx_by_inferred_type(num_types=8)
 
-        im = ax.imshow(m[neurons_idx_by_type, neurons_idx_by_type.T], cmap=data_cmap)
-        axis_ticks = range(0, 181, 60)
+        im = ax.imshow(np.pad(m[neurons_idx_by_type, neurons_idx_by_type.T], padding), cmap=data_cmap,
+                       interpolation='none')
+        axis_ticks = range(0 + padding, 181 + padding, 60)
         ax.set_xlabel("post-synaptic neuronal idx", fontsize=FONT_SIZE, labelpad=axis_labelpad)
         ax.set_ylabel("pre-synaptic neuronal idx", fontsize=FONT_SIZE, labelpad=axis_labelpad)
         ax.set_xticks(axis_ticks)
-        ax.set_xticklabels([str(i) for i in axis_ticks], fontsize=FONT_SIZE)
+        ax.set_xticklabels([str(i - padding) for i in axis_ticks], fontsize=FONT_SIZE)
         ax.set_yticks(axis_ticks)
-        ax.set_yticklabels([str(i) for i in axis_ticks], fontsize=FONT_SIZE)
+        ax.set_yticklabels([str(i - padding) for i in axis_ticks], fontsize=FONT_SIZE)
 
         if out_file_name is not None:
             plt.savefig(os.path.join(out_path, out_file_name), format='pdf')
@@ -2698,10 +2784,11 @@ def mean_weighted_connectivity_matrix(
     mean_weighed_connectome = _get_mean_weighted_conenctome()
     neurons_idx_by_type = _get_neurons_idx_by_inferred_type(8)
 
-    axis_ticks = range(0, 181, 60)
+    padding = 1
+    axis_ticks = range(0 + padding, 181 + padding, 60)
     fontsize = FONT_SIZE
-    main_axes = [0.18, 0.18, 0.65, 0.65]
-    colorbar_axes = [0.85, 0.18, 0.03, 0.65]
+    main_axes = (0.18, 0.18, 0.65, 0.65)
+    colorbar_axes = (0.85, 0.18, 0.03, 0.65)
     pylab.rcParams['xtick.major.pad'] = '0.5'
     pylab.rcParams['ytick.major.pad'] = '0.5'
     axis_labelpad = 1
@@ -2712,14 +2799,16 @@ def mean_weighted_connectivity_matrix(
     cs = plt.cm.Grays(np.linspace(0, 1, len(boundaries) - 1))
     cmap = colors.ListedColormap(cs)
     norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
-    im = plt.imshow(mean_weighed_connectome[neurons_idx_by_type, neurons_idx_by_type.T], cmap=cmap, norm=norm)
+    im = plt.imshow(np.pad(mean_weighed_connectome[neurons_idx_by_type, neurons_idx_by_type.T], padding), cmap=cmap,
+                    norm=norm,
+                    interpolation='none')
 
     ax.set_xlabel("post-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax.set_ylabel("pre-synaptic neuronal idx", fontsize=fontsize, labelpad=axis_labelpad)
     ax.set_xticks(axis_ticks)
-    ax.set_xticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax.set_xticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     ax.set_yticks(axis_ticks)
-    ax.set_yticklabels([str(i) for i in axis_ticks], fontsize=fontsize)
+    ax.set_yticklabels([str(i - padding) for i in axis_ticks], fontsize=fontsize)
     cbar_ax = fig.add_axes(colorbar_axes)
 
     cbar3 = fig.colorbar(im, cax=cbar_ax, ticks=boundaries)
@@ -2768,8 +2857,8 @@ def prediction_vs_num_synapses_data(out_path=os.path.join("Figures", "Fig7", "pr
     model_av_mat = calc_reciprocal_dependence_model_average_adj_mat_from_dyads_distributions_str_keys(
         model_train_dyads, model_test_dyads, nerve_ring_neurons)
 
-    r, p = scipy.stats.pearsonr(model_av_mat[~np.eye(len(nerve_ring_neurons), dtype=bool)].flatten(),
-                                mean_weighted_connectome[~np.eye(len(nerve_ring_neurons), dtype=bool)].flatten())
+    r, p = scipy.stats.pearsonr(_remove_main_diag_flatten(model_av_mat),
+                                _remove_main_diag_flatten(mean_weighted_connectome))
     print(f"scipy's Pearson's correlation coefficient: {r}")
     print(f"scipy's p-value: {p}, epsilon for floating point precision: {np.finfo(float).eps}")
     if p == 0:
@@ -2782,15 +2871,14 @@ def prediction_vs_num_synapses_data(out_path=os.path.join("Figures", "Fig7", "pr
         package with higher precision.
         """
         import mpmath as mp
-        mp.dps = 1000
-        mp.mp.prec = 100000
+        mp.mp.prec = 10000
         # number of observations
-        n = len(nerve_ring_neurons) ** 2 - len(nerve_ring_neurons)
+        n = mp.mpf(len(nerve_ring_neurons) ** 2 - len(nerve_ring_neurons))
         # shift per `loc=-1`, scale per `scale=2`
         x = (-abs(r) + 1) / 2
         # Compute the cumulative distribution function (CDF) at observed r, which is incomplete regularized beta
         p = 2 * mp.betainc(n / 2 - 1, n / 2 - 1, 0, x, regularized=True)
-        print(f"Estimated log10 of p-value with high precision: {mp.nstr(mp.log(p, b=10), 2)}")
+        print(f"Estimated log10 of p-value with high precision: {mp.nstr(mp.log(p, b=10), 5)}")
 
     num_synapses_to_prob_dict = {}
     for i, pre in enumerate(nerve_ring_neurons):
@@ -2853,27 +2941,30 @@ def prediction_vs_num_synapses_data(out_path=os.path.join("Figures", "Fig7", "pr
     cbar_ax.set_ylim(1, max(num_synapses_freqs))
     cbar.set_label('# neuronal pairs', fontsize=FONT_SIZE)
 
-    # fig.savefig(out_path, format="pdf")
+    fig.savefig(out_path, format="pdf")
     plt.show()
 
 
-def supplement_noisy_birth_times(out_path="Figures\\FigS_noised_birth_times"):
-    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
+def supplement_noisy_birth_times(out_path=os.path.join("Figures", "FigS_noised_birth_times")):
+    data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
     data_adj_mat = data_adj_mat.astype(int)
 
-    likelihoods_path = 'SavedOutputs\IndependentModel\likelihoods\SubTypes'
+    likelihoods_path = os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "SubTypes")
     smi, beta, _ = find_max_likelihood_full_model(likelihoods_path)
-    model_average_adj_mat_path = f"SavedOutputs\IndependentModel\\average_adj_mats\SubTypes\\smi{smi:.5f}_beta{beta:.5f}_adult.pkl"
+    model_average_adj_mat_path = os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "SubTypes",
+                                              f"smi{smi:.5f}_beta{beta:.5f}_adult.pkl")
     with open(model_average_adj_mat_path, 'rb') as f:
         true_birth_times_average_adj_mat = pickle.load(f)
 
-    true_birth_times_auc = roc_auc_score(data_adj_mat.flatten(), true_birth_times_average_adj_mat.flatten())
+    true_birth_times_auc = roc_auc_score(_remove_main_diag_flatten(data_adj_mat),
+                                         _remove_main_diag_flatten(true_birth_times_average_adj_mat))
     true_birth_times_like = average_matrix_log_likelihood(true_birth_times_average_adj_mat, data_connectome_path)
 
-    noisy_birth_times_average_connectomes_path = "SavedOutputs\IndependentModel\\average_adj_mats\SubTypes\\noised_birth_times"
+    noisy_birth_times_average_connectomes_path = os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats",
+                                                              "SubTypes", "noised_birth_times")
     noise_range = np.arange(0.1, 1.1, 0.1)
     num_noisings = len(
         os.listdir(os.path.join(noisy_birth_times_average_connectomes_path, f'{int(100 * noise_range[0])}%_noise')))
@@ -2888,12 +2979,13 @@ def supplement_noisy_birth_times(out_path="Figures\\FigS_noised_birth_times"):
                 model_noisy_average_mat = pickle.load(f)
             noisy_birth_times_likes[noising - 1, noise_idx] = average_matrix_log_likelihood(model_noisy_average_mat,
                                                                                             data_connectome_path)
-            noisy_birth_times_aucs[noising - 1, noise_idx] = roc_auc_score(data_adj_mat.flatten(),
-                                                                           model_noisy_average_mat.flatten())
+            noisy_birth_times_aucs[noising - 1, noise_idx] = roc_auc_score(_remove_main_diag_flatten(data_adj_mat),
+                                                                           _remove_main_diag_flatten(
+                                                                               model_noisy_average_mat))
             noise_idx += 1
 
-    fig = plt.figure(figsize=RECT_LARGE_FIG_SIZE)
-    main_axes = [0.21, 0.17, 0.76, 0.8]
+    fig = plt.figure(figsize=SQUARE_FIG_SIZE)
+    main_axes = (0.25, 0.17, 0.73, 0.73)
     fontsize = FONT_SIZE
     line_width = LINE_WIDTH
     markersize = MARKER_SIZE
@@ -2918,13 +3010,13 @@ def supplement_noisy_birth_times(out_path="Figures\\FigS_noised_birth_times"):
     plt.savefig(os.path.join(out_path, "true_noisy_log_like_ratio_subtypes.pdf"), format='pdf')
     plt.show()
 
-    fig = plt.figure(figsize=RECT_LARGE_FIG_SIZE)
+    fig = plt.figure(figsize=SQUARE_FIG_SIZE)
     yticks = np.arange(-0.01, 0.011, 0.005)
     ax = fig.add_axes(main_axes)
     ax.set_xticks(xticks)
     ax.set_xticklabels([f'{int(100 * tick)}%' for tick in xticks], fontsize=fontsize)
     ax.set_yticks(yticks)
-    ax.set_yticklabels([f'{tick:.3f}' for tick in yticks], fontsize=fontsize)
+    ax.set_yticklabels([f'{tick:.2f}' if i % 2 == 0 else '' for i, tick in enumerate(yticks)], fontsize=fontsize)
     ax.set_xlabel('noise level', fontsize=fontsize, labelpad=axes_labelpad)
     ax.set_ylabel(r'$\Delta \mathrm{AUC}$', fontsize=fontsize, labelpad=axes_labelpad)
     ax.set_xlim(0, 1.1)
@@ -2938,20 +3030,80 @@ def supplement_noisy_birth_times(out_path="Figures\\FigS_noised_birth_times"):
     plt.show()
 
 
-def supplement_auc_vs_number_of_inferred_types(out_path="Figures\\FigS_num_types_choice"):
-    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
+def supplement_mean_number_of_formed_synapses_vs_age(out_path=os.path.join("Figures", "FigS_noised_birth_times"),
+                                                     saved_calc_path=os.path.join("SavedOutputs", "IndependentModel",
+                                                                                  "average_adj_mats"),
+                                                     is_saved=False,
+                                                     do_save=True):
+    time_step = 10  # min.
+    if is_saved:
+        with open(os.path.join(saved_calc_path, "av_mats_across_dev.pkl"),
+                  'rb') as f:
+            average_adj_mats = pickle.load(f)
+        with open(os.path.join(saved_calc_path,
+                               "SubTypes", "noised_birth_times", f'{int(100 * 0.5)}%_noise',
+                               f'{1}_average_across_dev.pkl'),
+                  'rb') as f:
+            average_adj_mats_noisy_birth_times = pickle.load(f)
+    else:
+        likelihoods_path = os.path.join('SavedOutputs', 'IndependentModel', 'likelihoods', 'SubTypes')
+        smi, beta, _ = find_max_likelihood_full_model(likelihoods_path)
+        spls_path = os.path.join("SavedOutputs", "IndependentModel", "S+s", "SubTypes",
+                                 f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl")
+        with open(spls_path, 'rb') as f:
+            spls = pickle.load(f)
+
+        data_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset7.pkl")
+        average_adj_mats = calc_average_mats_across_dev(data_path, spls, smi, beta, time_step)
+
+        noisy_birth_times_data_path = os.path.join("CElegansData", "SubTypes",
+                                                   "noised_birth_times_connectomes", f'{int(100 * 0.5)}%_noise',
+                                                   f'{1}', "Dataset7.pkl")
+        average_adj_mats_noisy_birth_times = calc_average_mats_across_dev(noisy_birth_times_data_path, spls, smi, beta,
+                                                                          time_step)
+        if do_save:
+            with open(os.path.join(saved_calc_path, "av_mats_across_dev.pkl"), 'wb') as f:
+                pickle.dump(average_adj_mats, f)
+            with open(os.path.join(saved_calc_path,
+                                   "SubTypes", "noised_birth_times", f'{int(100 * 0.5)}%_noise',
+                                   f'{1}_average_across_dev.pkl'), 'wb') as f:
+                pickle.dump(average_adj_mats_noisy_birth_times, f)
+
+    fig = plt.figure(figsize=SQUARE_FIG_SIZE)
+    main_axes = (0.25, 0.17, 0.73, 0.73)
+    ax = fig.add_axes(main_axes)
+    ax.plot(range(time_step, ADULT_WORM_AGE, time_step), np.diff(average_adj_mats, axis=0).sum(axis=(1, 2)),
+            color=FULL_MODEL_COLOR, linewidth=LINE_WIDTH)
+    ax.plot(range(time_step, ADULT_WORM_AGE, time_step),
+            np.diff(average_adj_mats_noisy_birth_times, axis=0).sum(axis=(1, 2)),
+            color=adjust_lightness(FULL_MODEL_COLOR, 2), linewidth=LINE_WIDTH)
+    xticks = range(0, 3501, 875)
+    yticks = range(0, 41, 20)
+    ax.set_xticks(xticks, labels=[str(t) if i % 2 == 0 else '' for i, t in enumerate(xticks)], fontsize=FONT_SIZE)
+    ax.set_yticks(yticks, labels=[str(t) for t in yticks], fontsize=FONT_SIZE)
+    ax.set_xlabel('worm age [min.]', fontsize=FONT_SIZE, labelpad=1)
+    ax.set_ylabel('mean # formed synapses', fontsize=FONT_SIZE, labelpad=1)
+    ax.set_ylim(-2, 42)
+    ax.set_xlim(-250, 3750)
+    plt.savefig(os.path.join(out_path, "mean_number_of_formed_synapses.pdf"), format='pdf')
+    plt.show()
+
+
+def supplement_auc_vs_number_of_inferred_types(out_path=os.path.join("Figures", "FigS_num_types_choice")):
+    data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
     data_adj_mat = data_adj_mat.astype(int)
-    average_connectomes_dir_path = "SavedOutputs\IndependentModel\\average_adj_mats\InferredTypes"
+    average_connectomes_dir_path = os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "InferredTypes")
     possible_num_types = np.arange(1, 51, 1)
     aucs = np.zeros(possible_num_types.size)
     for num_types in possible_num_types:
         cur_file_name = os.path.join(average_connectomes_dir_path, f"{int(num_types)}_types.pkl")
         with open(cur_file_name, 'rb') as f:
             cur_average_mat = pickle.load(f)
-        aucs[num_types - 1] = roc_auc_score(data_adj_mat.flatten(), cur_average_mat.flatten())
+        aucs[num_types - 1] = roc_auc_score(_remove_main_diag_flatten(data_adj_mat),
+                                            _remove_main_diag_flatten(cur_average_mat))
     fig = plt.figure(figsize=RECT_MEDIUM_FIG_SIZE)
     ax1 = fig.add_axes([0.18, 0.16, 0.8, 0.8])
     fontsize = FONT_SIZE
@@ -2975,36 +3127,37 @@ def supplement_auc_vs_number_of_inferred_types(out_path="Figures\\FigS_num_types
     plt.show()
 
 
-def supplement_outputs_control_overfit(out_path="Figures\\FigS_num_types_choice"):
+def supplement_outputs_control_overfit(out_path=os.path.join("Figures", "FigS_num_types_choice")):
     max_num_learned_types = 15
     num_control_types = 8
     num_worm_samples_for_control_test = 100
     aucs_data = np.zeros(max_num_learned_types)
     aucs_controls_means_test = np.zeros(max_num_learned_types)
     aucs_controls_stds_test = np.zeros(max_num_learned_types)
-    with open("CElegansData\SubTypes\\connectomes\Dataset8.pkl", 'rb') as f:
+    with open(os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl"), 'rb') as f:
         data_connectome = pickle.load(f)
-        data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
-        data_adj_mat = data_adj_mat.flatten()
-        data_adj_mat = data_adj_mat.astype(int)
+        data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes)).astype(int)
 
-    average_connectomes_data_trained_path = "SavedOutputs\IndependentModel\\average_adj_mats\InferredTypes"
-    average_connectomes_control_path = f"SavedOutputs\ModelOutputsControl\\average_adj_mats\\{num_control_types}_control_types"
+    average_connectomes_data_trained_path = os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats",
+                                                         "InferredTypes")
+    average_connectomes_control_path = os.path.join("SavedOutputs", "ModelOutputsControl", "average_adj_mats",
+                                                    f"{num_control_types}_control_types")
     data_based_model_average_mat_path = os.path.join(average_connectomes_data_trained_path,
                                                      f"{num_control_types}_types.pkl")
     with open(data_based_model_average_mat_path, 'rb') as f:
         data_based_model_average_mat = pickle.load(f)
     for number in range(1, max_num_learned_types + 1):
         with open(os.path.join(average_connectomes_data_trained_path, f'{number}_types.pkl'), 'rb') as f:
-            model_av_adj_mat = pickle.load(f).flatten()
-        aucs_data[number - 1] = roc_auc_score(data_adj_mat, model_av_adj_mat)
+            model_av_adj_mat = pickle.load(f)
+        aucs_data[number - 1] = roc_auc_score(_remove_main_diag_flatten(data_adj_mat),
+                                              _remove_main_diag_flatten(model_av_adj_mat))
 
         with open(os.path.join(average_connectomes_control_path, f'{number}_learned_types.pkl'), 'rb') as f:
             control_average_mat = pickle.load(f)
         aucs = np.zeros(num_worm_samples_for_control_test)
         for i in range(num_worm_samples_for_control_test):
             worm_i = sample_from_average_adj_mat(data_based_model_average_mat)
-            aucs[i] = roc_auc_score(worm_i.flatten(), control_average_mat.flatten())
+            aucs[i] = roc_auc_score(_remove_main_diag_flatten(worm_i), _remove_main_diag_flatten(control_average_mat))
 
         aucs_controls_means_test[number - 1] = aucs.mean()
         aucs_controls_stds_test[number - 1] = aucs.std()
@@ -3036,19 +3189,20 @@ def supplement_outputs_control_overfit(out_path="Figures\\FigS_num_types_choice"
     plt.show()
 
 
-def fig_compressed_models_a_b(out_path="Figures\\FigCompressedModels"):
+def fig_compressed_models_a_b(out_path=os.path.join("Figures", "FigCompressedModels")):
     num_types = 8
     smi, beta, _ = find_max_likelihood_full_model(
-        f"SavedOutputs\IndependentModel\likelihoods\InferredTypes\\{num_types}_types")
+        os.path.join("SavedOutputs", "IndependentModel", "likelihoods", "InferredTypes", f"{num_types}_types"))
     spls_path = os.path.join(
-        f"SavedOutputs\IndependentModel\S+s\InferredTypes\\{num_types}_types",
+        "SavedOutputs", "IndependentModel", "S+s", "InferredTypes", f"{num_types}_types",
         f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl")
 
     sorted_inferred_types_indices = np.array([4, 6, 7, 5, 1, 0, 3, 2]).reshape(num_types, 1)
     spls_mat, _ = convert_spls_dict_to_mat(spls_path, developmental_stage=0)
     spls_mat = spls_mat[sorted_inferred_types_indices, sorted_inferred_types_indices.T]
 
-    compact_spls_path = f"SavedOutputs\IndependentModel\compact_models\\0.05_performance_decrease\\{num_types}\\compact_spls.pkl"
+    compact_spls_path = os.path.join("SavedOutputs", "IndependentModel", "compact_models", "0.05_performance_decrease",
+                                     f"{num_types}", "compact_spls.pkl")
     compact_spls_mat, _ = convert_spls_dict_to_mat(compact_spls_path, developmental_stage=0)
     compact_spls_mat = compact_spls_mat[sorted_inferred_types_indices, sorted_inferred_types_indices.T]
 
@@ -3106,9 +3260,9 @@ def fig_compressed_models_a_b(out_path="Figures\\FigCompressedModels"):
     plt.show()
 
 
-def fig_compressed_models_c(out_path="Figures\\FigCompressedModels"):
+def fig_compressed_models_c(out_path=os.path.join("Figures", "FigCompressedModels")):
     num_types = 8
-    data_connectome_path = 'CElegansData\SubTypes\\connectomes\Dataset8.pkl'
+    data_connectome_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset8.pkl")
     with open(data_connectome_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_adj_mat = nx.to_numpy_array(data_connectome, nodelist=sorted(data_connectome.nodes))
@@ -3158,7 +3312,7 @@ def fig_compressed_models_c(out_path="Figures\\FigCompressedModels"):
     plt.show()
 
 
-def fig_compressed_models_d(out_path="Figures\\FigCompressedModels"):
+def fig_compressed_models_d(out_path=os.path.join("Figures", "FigCompressedModels")):
     num_types_range = range(1, 16)
     compact_num_params_5_per_performance = np.zeros(len(num_types_range))
     compact_models_path = os.path.join("SavedOutputs", "IndependentModel", "compact_models")
@@ -3193,18 +3347,19 @@ def fig_compressed_models_d(out_path="Figures\\FigCompressedModels"):
     plt.show()
 
 
-def supplement_reciprocity_independent_model(out_path="Figures\\FigS_reciprocity"):
+def supplement_reciprocity_independent_model(out_path=os.path.join("Figures", "FigS_reciprocity")):
     max_type_number = 50
     mean_reciprocities = np.zeros(max_type_number)
     std_reciprocities = np.zeros(max_type_number)
-    with open("CElegansData\SubTypes\\connectomes\Dataset7.pkl", 'rb') as f:
+    with open(os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset7.pkl"), 'rb') as f:
         data_connectome = pickle.load(f)
     data_reciprocity = calc_reciprocity(data_connectome)
     num_neurons = len(data_connectome.nodes)
     num_synapses = num_neurons * (num_neurons - 1)
     num_pairs_of_neurons = num_synapses / 2
     for number in range(1, mean_reciprocities.size + 1):
-        with open(f"SavedOutputs\IndependentModel\\average_adj_mats\InferredTypes\\{number}_types.pkl", 'rb') as f:
+        with open(os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "InferredTypes",
+                               f"{number}_types.pkl"), 'rb') as f:
             model_av_adj_mat = pickle.load(f)
 
         reciprocity_prob_matrix = np.triu(model_av_adj_mat * model_av_adj_mat.T)
@@ -3237,11 +3392,13 @@ def supplement_reciprocity_independent_model(out_path="Figures\\FigS_reciprocity
     plt.show()
 
 
-def supplement_reciprocity_reciprocal_model(out_path="Figures\\FigS_reciprocity",
-                                            saved_calcs_path="SavedOutputs\ReciprocalModel\FullDataset\dyads_distributions\8_types",
+def supplement_reciprocity_reciprocal_model(out_path=os.path.join("Figures", "FigS_reciprocity"),
+                                            saved_calcs_path=os.path.join("SavedOutputs", "ReciprocalModel",
+                                                                          "FullDataset", "dyads_distributions",
+                                                                          "8_types"),
                                             is_saved=False, do_save=True):
     num_types = 8
-    train_data_path = f"CElegansData\InferredTypes\connectomes\\{num_types}_types\\Dataset7.pkl"
+    train_data_path = os.path.join("CElegansData", "InferredTypes", "connectomes", f"{num_types}_types", "Dataset7.pkl")
     with open(train_data_path, 'rb') as f:
         data_connectome = pickle.load(f)
     data_reciprocity = calc_reciprocity(data_connectome)
@@ -3251,7 +3408,8 @@ def supplement_reciprocity_reciprocal_model(out_path="Figures\\FigS_reciprocity"
     gamma_range = range(1, 10)
     mean_reciprocities = np.zeros(len(gamma_range))
     std_reciprocities = np.zeros(len(gamma_range))
-    with open(f"SavedOutputs\IndependentModel\\average_adj_mats\InferredTypes\\{num_types}_types.pkl", 'rb') as f:
+    with open(os.path.join("SavedOutputs", "IndependentModel", "average_adj_mats", "InferredTypes",
+                           f"{num_types}_types.pkl"), 'rb') as f:
         model_av_adj_mat = pickle.load(f)
 
     reciprocity_prob_matrix = np.triu(model_av_adj_mat * model_av_adj_mat.T)
@@ -3260,10 +3418,12 @@ def supplement_reciprocity_reciprocal_model(out_path="Figures\\FigS_reciprocity"
         np.sum(reciprocity_prob_matrix * (1 - reciprocity_prob_matrix)) / num_pairs_of_neurons ** 2)
     idx = 1
     for gamma in gamma_range[1:]:
-        likelihoods_path = f'SavedOutputs\ReciprocalModel\FullDataset\likelihoods\\{num_types}_types\gamma{gamma}'
+        likelihoods_path = os.path.join("SavedOutputs", "ReciprocalModel", "FullDataset", "likelihoods",
+                                        f"{num_types}_types", f"gamma{gamma}")
         smi, beta, _ = find_max_likelihood_full_model(likelihoods_path)
         if not is_saved:
-            spls_path = f"SavedOutputs\ReciprocalModel\FullDataset\S+s\\{num_types}_types\gamma{gamma}\\spls_smi{smi:.5f}_beta{beta:.5f}.pkl"
+            spls_path = os.path.join("SavedOutputs", "ReciprocalModel", "FullDataset", "S+s", f"{num_types}_types",
+                                     f"gamma{gamma}", f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl")
             with open(spls_path, 'rb') as f:
                 spls = pickle.load(f)
             model_dyads_distribution = calc_reciprocal_dependence_model_dyads_states_distribution(spls, smi, beta,
@@ -3298,7 +3458,7 @@ def supplement_reciprocity_reciprocal_model(out_path="Figures\\FigS_reciprocity"
     ax1.set_xticklabels([f'{tick}' for tick in x_axes_ticks], fontsize=fontsize)
     ax1.set_yticks(y_axes_ticks)
     ax1.set_yticklabels([f'{tick:.2f}' for tick in y_axes_ticks], fontsize=fontsize)
-    ax1.set_xlabel('$\gamma$', fontsize=fontsize, labelpad=axes_labelpad)
+    ax1.set_xlabel(r'$\gamma$', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.set_ylabel('fraction of reciprocal dyads', fontsize=fontsize, labelpad=axes_labelpad)
     ax1.fill_between(gamma_range, y1=mean_reciprocities + num_stds * std_reciprocities,
                      y2=mean_reciprocities - num_stds * std_reciprocities, color=SINGLE_EPOCH_INFERRED_COLOR, alpha=0.5,
@@ -3308,13 +3468,14 @@ def supplement_reciprocity_reciprocal_model(out_path="Figures\\FigS_reciprocity"
     plt.show()
 
 
-def supplement_spl_mats_across_dev(out_path="Figures\\FigS_S+s_across_dev"):
+def supplement_spl_mats_across_dev(out_path=os.path.join("Figures", "FigS_S+s_across_dev")):
     num_types = 8
     sorted_inferred_types_indices = np.array(
         [INFERRED_TYPES_LABEL_TO_INDEX[label] for label in sorted(INFERRED_TYPES_LABEL_TO_INDEX.keys())]).reshape(
         num_types, 1)
 
-    with open("SavedOutputs\ReciprocalModel\\DyadsSplit\\max_likelihood_params_per_split_3_epochs.pkl",
+    with open(os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit",
+                           "max_likelihood_params_per_split_3_epochs.pkl"),
               'rb') as f:
         max_like_params_multiple = pickle.load(f)
 
@@ -3339,10 +3500,11 @@ def supplement_spl_mats_across_dev(out_path="Figures\\FigS_S+s_across_dev"):
 
     for split in range(1, num_splits + 1):
         smi = max_like_params_multiple[f'split{split}']['S-']
-        likelihoods_path = f"SavedOutputs\ReciprocalModel\\DyadsSplit\\likelihoods\ThreeDevStages\split{split}"
+        likelihoods_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "likelihoods",
+                                        "ThreeDevStages", f"split{split}")
         _, beta, _ = find_max_likelihood_full_model(likelihoods_path, smi_value=float(f'{smi:.5f}'))
         spls_file_name = f"spls_smi{smi:.5f}_beta{beta:.5f}.pkl"
-        spls_path = os.path.join("SavedOutputs\ReciprocalModel\\DyadsSplit\S+s\ThreeDevStages",
+        spls_path = os.path.join("SavedOutputs", "ReciprocalModel", "DyadsSplit", "S+s", "ThreeDevStages",
                                  f"split{split}",
                                  spls_file_name)
 
@@ -3393,16 +3555,96 @@ def supplement_spl_mats_across_dev(out_path="Figures\\FigS_S+s_across_dev"):
         plt.close()
 
 
+def supplement_birth_times_hist(out_dir_path=os.path.join("Figures", "FigS_birth_times_positions_data")):
+    data_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset7.pkl")
+    with open(data_path, "rb") as f:
+        worm_7 = pickle.load(f)
+    all_birth_times = [worm_7.nodes[n]['birth_time'] for n in worm_7.nodes]
+    fig = plt.figure(figsize=RECT_LARGE_FIG_SIZE)
+    main_axes = [0.21, 0.17, 0.76, 0.8]
+    fontsize = FONT_SIZE
+    axes_labelpad = 1
+    xticks = range(0, 2001, 1000)
+    yticks = range(0, 81, 40)
+    ax = fig.add_axes(main_axes)
+    ax.set_xticks(xticks)
+    ax.set_xticklabels([f'{tick}' for tick in xticks], fontsize=fontsize)
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([f'{tick}' for tick in yticks], fontsize=fontsize)
+    ax.set_xlabel('birth time [min.]', fontsize=fontsize, labelpad=axes_labelpad)
+    ax.set_ylabel('frequency', fontsize=fontsize,
+                  labelpad=axes_labelpad)
+    ax.set_xlim(0, 2250)
+    plt.hist(all_birth_times, bins=np.arange(0, max(all_birth_times) + 10, 10), color='k')
+    plt.yscale('log')
+    plt.savefig(os.path.join(out_dir_path, "birth_times.pdf"), format='pdf')
+    plt.show()
+
+
+def supplement_positions(out_dir_path=os.path.join("Figures", "FigS_birth_times_positions_data")):
+    data_path = os.path.join("CElegansData", "SubTypes", "connectomes", "Dataset7.pkl")
+    with open(data_path, "rb") as f:
+        worm_7 = pickle.load(f)
+    sorted_neurons = sorted(list(worm_7.nodes))
+    all_birth_times = [worm_7.nodes[n]['birth_time'] for n in sorted_neurons]
+    all_positions = np.stack([worm_7.nodes[n]['coords'] * WORM_LENGTH_NORMALIZATION for n in sorted_neurons])
+    fig = plt.figure(figsize=RECT_LARGE_FIG_SIZE)
+    fontsize = FONT_SIZE
+    axes_labelpad = 1
+    ax = fig.add_axes((0.0, 0.05, 0.75, 0.9), projection='3d')
+    ax.set_box_aspect([2, 1, 1])
+    norm = colors.LogNorm(vmin=100, vmax=max(all_birth_times))
+    cmap = cm.get_cmap('Blues')
+    cs = cmap(norm(np.array(all_birth_times)))
+    ax.scatter(all_positions[:, 0], all_positions[:, 1], all_positions[:, 2], c=cs, marker='o', s=MARKER_SIZE,
+               depthshade=False)
+    xticks = range(0, 801, 400)
+    zticks = range(-10, 11, 10)
+    yticks = range(0, 21, 10)
+    ax.set_xticks(xticks)
+    ax.set_yticks(yticks)
+    ax.set_zticks(zticks)
+    ax.set_xticklabels([f'{tick}' for tick in xticks], fontsize=fontsize)
+    ax.set_yticklabels([f'{tick}' for tick in yticks], fontsize=fontsize)
+    ax.set_zticklabels([f'{tick}' for tick in zticks], fontsize=fontsize)
+    ax.tick_params(axis='x', pad=-5)
+    ax.tick_params(axis='y', pad=-5)
+    ax.tick_params(axis='z', pad=-4)
+    ax.set_xlabel(r'x [$\mu m$]', fontsize=fontsize, labelpad=axes_labelpad - 5)
+    ax.set_ylabel(r'y [$\mu m$]', fontsize=fontsize, labelpad=axes_labelpad - 10)
+    ax.set_zlabel(r'z [$\mu m$]', fontsize=fontsize, labelpad=axes_labelpad - 12)
+
+    cbar_ax = fig.add_axes((0.835, 0.1, 0.02, 0.7))
+    majorticks = np.logspace(2, 3, num=2)
+    cbar = fig.colorbar(cm.ScalarMappable(cmap=cmap, norm=norm), cax=cbar_ax, ticks=majorticks)
+    minorticks = []
+    for i in range(2, 3):
+        minorticks += list(np.arange(2, 11) * 10 ** i)
+    for j in range(2, 11):
+        if j * 10 ** 3 > max(all_birth_times):
+            break
+        minorticks.append(j * 10 ** 3)
+    cbar.ax.yaxis.set_ticks(minorticks, minor=True)
+    cbar.ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    cbar_ax.set_yticklabels([r"$10^{{{0:d}}}$".format(i) for i in range(2, 4)],
+                            fontsize=fontsize)
+    cbar_ax.tick_params(axis='y', pad=2)
+    cbar.ax.set_ylabel("birth time [min.]", fontsize=fontsize, labelpad=axes_labelpad)
+
+    plt.savefig(os.path.join(out_dir_path, "positions.pdf"), format='pdf')
+    plt.show()
+
+
 if __name__ == "__main__":
-    fig_1_b()
     fig_1_c()
-    fig_1_d_e_f()
+    fig_1_d()
+    fig_1_b_e_f()
     fig_1_g()
 
     fig_2_b()
     fig_2_c()
-    fig_2_d()
-    fig_2_e_f_g()
+    fig_2_d_e_f()
+    fig_2_g()
 
     fig_graph_features_a()
     fig_graph_features_b()
@@ -3430,7 +3672,10 @@ if __name__ == "__main__":
     mean_weighted_connectivity_matrix()
     prediction_vs_num_synapses_data()
 
+    supplement_positions()
+
     supplement_noisy_birth_times()
+    supplement_mean_number_of_formed_synapses_vs_age()
 
     supplement_auc_vs_number_of_inferred_types()
     supplement_outputs_control_overfit()

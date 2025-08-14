@@ -3,7 +3,7 @@ import numpy as np
 import networkx as nx
 from CElegansNeuronsAdder import CElegansNeuronsAdder
 from c_elegans_data_parsing import SUB_COARSE_TYPES_MAPPING
-from c_elegans_constants import C_ELEGANS_LENGTHS
+from c_elegans_constants import C_ELEGANS_LENGTHS, ADULT_WORM_AGE, MEI_ZHEN_NUM_NEURONS, SINGLE_DEVELOPMENTAL_AGE
 
 
 def model_log_likelihood(spls, smi, beta, reference_age, developmental_ages, c_elegans_connectome_path):
@@ -355,3 +355,23 @@ def convert_spls_mat_to_dict(spls_mat):
         for col in range(spls_mat.shape[1]):
             spls_dict[0][(row, col)] = spls_mat[row, col]
     return spls_dict
+
+def calc_average_mats_across_dev(data_path, spls, smi, beta, time_step=10):
+    with open(data_path, 'rb') as f:
+        data = pickle.load(f)
+    neurons_subset = sorted(list(data.nodes))
+    average_adj_mats = np.zeros((ADULT_WORM_AGE // time_step, MEI_ZHEN_NUM_NEURONS, MEI_ZHEN_NUM_NEURONS))
+
+    for step in range(0, ADULT_WORM_AGE, time_step):
+        sorted_nodes_before_reference_age = []
+        for neuron in neurons_subset:
+            if data.nodes[neuron]['birth_time'] < step:
+                sorted_nodes_before_reference_age.append(neuron)
+        if not sorted_nodes_before_reference_age:
+            continue
+        cur_partial_av_mat = calc_model_adj_mat(spls, smi, beta, step, SINGLE_DEVELOPMENTAL_AGE, data_path)
+        indices_in_full_neuron_list = np.array([neurons_subset.index(n) for n in sorted_nodes_before_reference_age])
+        cur_full_av_mat = np.zeros((MEI_ZHEN_NUM_NEURONS, MEI_ZHEN_NUM_NEURONS))
+        cur_full_av_mat[np.ix_(indices_in_full_neuron_list, indices_in_full_neuron_list)] = cur_partial_av_mat
+        average_adj_mats[step // time_step] = cur_full_av_mat
+    return average_adj_mats

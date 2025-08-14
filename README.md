@@ -9,6 +9,8 @@ There are parts that require a computing cluster for parallel computations, and 
 
 To install the dependencies run the following command in the terminal: `pip install -r requirements.txt`. This should take a few minutes.
 
+Note: The call to `scipy`'s `fft` in line 54 of the `__init__.py` file of the `poisson_binomial` package (at the end of the method `PoissonBinomial.get_poisson_binomial()`) should be edited (`fft(xs)` should be replaced by `fft.fft(xs)`) in order to use it properly (it is used for average degree calculations).
+
 ## Short description of files and folders
 ### CElegansData
 Contains the data (raw and processed) that is used for analyses.
